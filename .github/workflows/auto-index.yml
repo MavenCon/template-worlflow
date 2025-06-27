@@ -41,7 +41,7 @@ jobs:
           -c \
           -i ./snapshots/.index \
           -n github-snapshots-repo \
-          -r https://mavencon.github.io/template-worlflow/snapshots
+          -r ~/snapshots
         
         # 创建属性文件
         cat <<EOF > ./releases/.index/nexus-maven-repository-index.properties
