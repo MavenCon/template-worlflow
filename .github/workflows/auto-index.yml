@@ -39,9 +39,9 @@ jobs:
         # 生成索引
         java -jar indexer-cli.jar \
           -c \
-          -i ./releases/.index \
-          -n github-releases-repo \
-          -r https://mavencon.github.io/template-worlflow/releases
+          -i ./snapshots/.index \
+          -n github-snapshots-repo \
+          -r https://mavencon.github.io/template-worlflow/snapshots
         
         # 创建属性文件
         cat <<EOF > ./releases/.index/nexus-maven-repository-index.properties
