@@ -22,13 +22,13 @@ jobs:
       with:
         java-version: '17'
         distribution: 'temurin'
-    
+
     - name: Download Maven Indexer
       run: |
         # 下载最新版indexer-cli
         INDEXER_VERSION=$(curl -s https://repo.maven.apache.org/maven2/org/apache/maven/indexer/indexer-cli/maven-metadata.xml | grep -oP '(?<=<latest>)[^<]+')
-        wget https://repo.maven.apache.org/maven2/org/apache/maven/indexer/indexer-cli/${INDEXER_VERSION}/indexer-cli-${INDEXER_VERSION}.jar -O indexer.jar
-    
+        wget https://repo.maven.apache.org/maven2/org/apache/maven/indexer/indexer-cli/${INDEXER_VERSION}/indexer-cli-${INDEXER_VERSION}-app.jar -O indexer-cli.jar
+
     - name: Generate index
       run: |
         # 创建索引目录
@@ -37,17 +37,17 @@ jobs:
         mkdir -p plugins/.index
         
         # 生成索引
-        java -jar indexer.jar \
+        java -jar indexer-cli.jar \
           --scan ./releases \
           --index ./releases/.index \
           --repoId github-releases-repo \
           --repoUrl https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/repository
-        java -jar indexer.jar \
+        java -jar indexer-cli.jar \
           --scan ./snapshots \
           --index ./snapshots/.index \
           --repoId github-snapshots-repo \
           --repoUrl https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/repository
-        java -jar indexer.jar \
+        java -jar indexer-cli.jar \
           --scan ./plugins \
           --index ./plugins/.index \
           --repoId github-plugins-repo \
@@ -84,8 +84,8 @@ jobs:
         # 显示生成的索引大小
         du -sh ./releases/.index
         du -sh ./snapshots/.index
-        du -sh ./plugins/.indez
-    
+        du -sh ./plugins/.index
+
     - name: Commit and push index
       run: |
         # 配置git用户
