@@ -27,7 +27,7 @@ jobs:
       run: |
         # 下载最新版indexer-cli
         INDEXER_VERSION=$(curl -s https://repo.maven.apache.org/maven2/org/apache/maven/indexer/indexer-cli/maven-metadata.xml | grep -oP '(?<=<latest>)[^<]+')
-        wget https://repo.maven.apache.org/maven2/org/apache/maven/indexer/indexer-cli/${INDEXER_VERSION}/indexer-cli-${INDEXER_VERSION}-app.jar -O indexer-cli.jar
+        wget https://repo.maven.apache.org/maven2/org/apache/maven/indexer/indexer-cli/${INDEXER_VERSION}/indexer-cli-${INDEXER_VERSION}-cli.jar -O indexer-cli.jar
 
     - name: Generate index
       run: |
