@@ -32,27 +32,59 @@ jobs:
     - name: Generate index
       run: |
         # 创建索引目录
-        mkdir -p repository/.index
+        mkdir -p releases/.index
+        mkdir -p snapshots/.index
+        mkdir -p plugins/.index
         
         # 生成索引
         java -jar indexer.jar \
-          --scan ./repository \
-          --index ./repository/.index \
-          --repoId github-repo \
+          --scan ./releases \
+          --index ./releases/.index \
+          --repoId github-releases-repo \
+          --repoUrl https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/repository
+        java -jar indexer.jar \
+          --scan ./snapshots \
+          --index ./snapshots/.index \
+          --repoId github-snapshots-repo \
+          --repoUrl https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/repository
+        java -jar indexer.jar \
+          --scan ./plugins \
+          --index ./plugins/.index \
+          --repoId github-plugins-repo \
           --repoUrl https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/repository
         
         # 创建属性文件
-        cat <<EOF > ./repository/.index/nexus-maven-repository-index.properties
+        cat <<EOF > ./releases/.index/nexus-maven-repository-index.properties
         #Nexus Index Properties
         version=1
         incremental=false
-        repositoryId=github-repo
+        repositoryId=github-releases-repo
+        timestamp=$(date +%s000)
+        description=Maven repository hosted on GitHub
+        EOF
+        # 创建属性文件
+        cat <<EOF > ./snapshots/.index/nexus-maven-repository-index.properties
+        #Nexus Index Properties
+        version=1
+        incremental=false
+        repositoryId=github-snapshots-repo
+        timestamp=$(date +%s000)
+        description=Maven repository hosted on GitHub
+        EOF
+        # 创建属性文件
+        cat <<EOF > ./plugins/.index/nexus-maven-repository-index.properties
+        #Nexus Index Properties
+        version=1
+        incremental=false
+        repositoryId=github-plugins-repo
         timestamp=$(date +%s000)
         description=Maven repository hosted on GitHub
         EOF
         
         # 显示生成的索引大小
-        du -sh ./repository/.index
+        du -sh ./releases/.index
+        du -sh ./snapshots/.index
+        du -sh ./plugins/.indez
     
     - name: Commit and push index
       run: |
@@ -61,7 +93,9 @@ jobs:
         git config --global user.email "actions@github.com"
         
         # 检查是否有索引文件变化
-        git add repository/.index
+        git add releases/.index
+        git add snapshots/.index
+        git add plugins/.index
         if ! git diff --cached --quiet; then
           git commit -m "Update Maven repository index [skip ci]"
           git push
