@@ -17,8 +17,8 @@ jobs:
       with:
         fetch-depth: 0  # 获取完整历史记录，可能需要用于版本比较
     
-    - name: Set up JDK
-      uses: actions/setup-java@v3
+    - name: Setup Java
+      uses: actions/setup-java@v4
       with:
         java-version: '17'
         distribution: 'temurin'
