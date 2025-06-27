@@ -5,7 +5,7 @@ on:
     paths:
         - 'repository/**'  
     # repository rewrite run thia workflow 
-   workflow_dispatch:     
+  workflow_dispatch:     
    # dispath enable
 jobs:
   generate-index:
