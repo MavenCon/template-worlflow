@@ -3,16 +3,16 @@
   <groupId>org.test</groupId>
   <artifactId>testMavenCon</artifactId>
   <versioning>
-    <lastUpdated>20250627122334</lastUpdated>
+    <lastUpdated>20250627123247</lastUpdated>
     <snapshot>
-      <timestamp>20250627.122334</timestamp>
-      <buildNumber>1</buildNumber>
+      <timestamp>20250627.123247</timestamp>
+      <buildNumber>2</buildNumber>
     </snapshot>
     <snapshotVersions>
       <snapshotVersion>
         <extension>pom</extension>
-        <value>1.0-20250627.122334-1</value>
-        <updated>20250627122334</updated>
+        <value>1.0-20250627.123247-2</value>
+        <updated>20250627123247</updated>
       </snapshotVersion>
     </snapshotVersions>
   </versioning>
