@@ -13,51 +13,51 @@ jobs:
   generate-index:
     runs-on: ubuntu-latest
     steps:
-        - uses: actions/checkout@v4
+    - uses: actions/checkout@v4
+        with:
+            fetch-depth: 0  
+            # 获取完整历史记录，可能需要用于版本比较       
+    - name: Set up JDK
+        uses: actions/setup-java@v3
             with:
-                fetch-depth: 0  
-                # 获取完整历史记录，可能需要用于版本比较       
-        - name: Set up JDK
-            uses: actions/setup-java@v3
-                with:
-                    java-version: '17'
-                    distribution: 'temurin'
-        - name: Download Maven Indexer
-            run: |
-                # donwload  latest indexer-cli        
-                INDEXER_VERSION=$(curl -s https://repo.maven.apache.org/maven2/org/apache/maven/indexer/indexer-cli/maven-metadata.xml | grep -oP '(?<=<latest>)[^<]+')        
-                wget https://repo.maven.apache.org/maven2/org/apache/maven/indexer/indexer-cli/${INDEXER_VERSION}/indexer-cli-${INDEXER_VERSION}.jar -O indexer.jar
-        - name: Generate index
-            run: |        
-                # 创建索引目录        
-                mkdir -p repository/.index
-                # 生成索引
-                java -jar indexer.jar \
-                    --scan ./repository \
-                    --index ./repository/.index \
-                    --repoId github-repo \
-                    --repoUrl https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/repository
-                # 创建属性文件
-                cat <<EOF > ./repository/.index/nexus-maven-repository-index.properties
-                #Nexus Index Properties
-                version=1
-                incremental=false
-                repositoryId=github-repo
-                timestamp=$(date +%s000)
-                description=Maven repository hosted on GitHub
-                EOF
-                # 显示生成的索引大小        
-                du -sh ./repository/.index
-        - name: Commit and push index
-            run: |
-                # 配置git用户
-                git config --global user.name "GitHub Actions"
-                git config --global user.email "actions@github.com"
-                # 检查是否有索引文件变化        
-                git add repository/.index
-                if ! git diff --cached --quiet; then   
-                    git commit -m "Update Maven repository index [skip ci]"
-                   git push
-                else
-                    echo "No changes in index files"
-            e    fi
+                java-version: '17'
+                distribution: 'temurin'
+    - name: Download Maven Indexer
+        run: |
+           # donwload  latest indexer-cli        
+           INDEXER_VERSION=$(curl -s https://repo.maven.apache.org/maven2/org/apache/maven/indexer/indexer-cli/maven-metadata.xml | grep -oP '(?<=<latest>)[^<]+')        
+           wget https://repo.maven.apache.org/maven2/org/apache/maven/indexer/indexer-cli/${INDEXER_VERSION}/indexer-cli-${INDEXER_VERSION}.jar -O indexer.jar
+    - name: Generate index
+        run: |        
+            # 创建索引目录        
+            mkdir -p repository/.index
+            # 生成索引
+            java -jar indexer.jar \
+                --scan ./repository \
+                --index ./repository/.index \
+                --repoId github-repo \
+                --repoUrl https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/repository
+            # 创建属性文件
+            cat <<EOF > ./repository/.index/nexus-maven-repository-index.properties
+            #Nexus Index Properties
+            version=1
+            incremental=false
+            repositoryId=github-repo
+            timestamp=$(date +%s000)
+            description=Maven repository hosted on GitHub
+            EOF
+            # 显示生成的索引大小        
+            du -sh ./repository/.index
+    - name: Commit and push index
+        run: |
+            # 配置git用户
+            git config --global user.name "GitHub Actions"
+            git config --global user.email "actions@github.com"
+            # 检查是否有索引文件变化        
+            git add repository/.index
+            if ! git diff --cached --quiet; then   
+                git commit -m "Update Maven repository index [skip ci]"
+                git push
+            else
+               echo "No changes in index files"
+            fi
