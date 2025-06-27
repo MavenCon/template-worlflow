@@ -38,20 +38,10 @@ jobs:
         
         # 生成索引
         java -jar indexer-cli.jar \
-          --scan ./releases \
-          --index ./releases/.index \
-          --repoId github-releases-repo \
-          --repoUrl https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/repository
-        java -jar indexer-cli.jar \
-          --scan ./snapshots \
-          --index ./snapshots/.index \
-          --repoId github-snapshots-repo \
-          --repoUrl https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/repository
-        java -jar indexer-cli.jar \
-          --scan ./plugins \
-          --index ./plugins/.index \
-          --repoId github-plugins-repo \
-          --repoUrl https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/repository
+          -c \
+          -i ./releases/.index \
+          -n github-releases-repo \
+          -r https://mavencon.github.io/template-worlflow/releases
         
         # 创建属性文件
         cat <<EOF > ./releases/.index/nexus-maven-repository-index.properties
