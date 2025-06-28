@@ -88,6 +88,9 @@ jobs:
           REPO_OWNER="${GITHUB_REPOSITORY_OWNER}"
           REPO_NAME="${GITHUB_REPOSITORY#*/}"
           
+          # 创建一个.nojekyll文件以禁止GitHub Pages的Jekyll处理
+          touch .nojekyll
+          
           # 生成子仓库索引页面（纯Markdown格式）
           for i in "${!REPOS[@]}"; do
             repo="${REPOS[$i]}"
@@ -104,7 +107,7 @@ jobs:
             if [ -d "./$repo/org" ]; then
               echo "### org" >> ./$repo/index.md
           
-              # 扫描并生成组织和项目的层级结��
+              # 扫描并生成组织和项目的层级结构
               for groupId in $(find ./$repo/org -mindepth 1 -maxdepth 1 -type d | sort); do
                 groupName=$(basename "$groupId")
                 echo "- [$groupName](org/$groupName/index.md)" >> ./$repo/index.md
