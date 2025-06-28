@@ -1,4 +1,4 @@
-name: Update Maven Repository Index
+name: Generate Maven Repository Index
 
 permissions:
   contents: write
