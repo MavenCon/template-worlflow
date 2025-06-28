@@ -169,44 +169,58 @@
 					return;
 				}
 
-				// 创建表格来显示内容
-				let tableHTML = `
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>名称</th>
-                                    <th>最后修改时间</th>
-                                    <th>大小</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                    `;
-
-				// 先处理文件夹
-				const folders = items.filter(a => a.getAttribute('href').endsWith('/'));
-				folders.forEach(a => {
+				// 创建统一的数据结构
+				const fileList = items.map(a => {
+					const href = a.getAttribute('href');
 					const name = a.textContent.replace('/', '');
-					tableHTML += `
-                            <tr>
-                                <td><a href="#" class="folder" onclick="navigate('${currentPath ? currentPath + '/' : ''}${name}'); return false;">${name}</a></td>
-                                <td>-</td>
-                                <td>-</td>
-                            </tr>
-                        `;
+					const isFolder = href.endsWith('/');
+
+					return {
+						name: name,
+						isFolder: isFolder,
+						href: href
+					};
 				});
 
-				// 再处理文件
-				const files = items.filter(a => !a.getAttribute('href').endsWith('/'));
-				files.forEach(a => {
-					const name = a.textContent;
-					const href = a.getAttribute('href');
-					tableHTML += `
+				// 排序：文件夹优先，然后按字母顺序排序
+				fileList.sort((a, b) => {
+					if (a.isFolder && !b.isFolder) return -1;
+					if (!a.isFolder && b.isFolder) return 1;
+					return a.name.localeCompare(b.name);
+				});
+
+				// 创建表格来显示内容
+				let tableHTML = `
+                    <table>
+                        <thead>
                             <tr>
-                                <td><a href="${baseUrl}${href}" class="file" target="_blank">${name}</a></td>
+                                <th>名称</th>
+                                <th>最后修改时间</th>
+                                <th>大小</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+				// 统一处理所有条目
+				fileList.forEach(item => {
+					if (item.isFolder) {
+						tableHTML += `
+                            <tr>
+                                <td><a href="#" class="folder" onclick="navigate('${currentPath ? currentPath + '/' : ''}${item.name}'); return false;">${item.name}</a></td>
                                 <td>-</td>
                                 <td>-</td>
                             </tr>
                         `;
+					} else {
+						tableHTML += `
+                            <tr>
+                                <td><a href="${baseUrl}${item.href}" class="file" target="_blank">${item.name}</a></td>
+                                <td>-</td>
+                                <td>-</td>
+                            </tr>
+                        `;
+					}
 				});
 
 				tableHTML += '</tbody></table>';
