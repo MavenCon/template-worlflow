@@ -4,23 +4,71 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Maven Index</title>
+	<!-- 在页面渲染前应用主题，防止闪烁 -->
+	<script>
+		// 提前加载保存的主题设置，防止页面闪烁
+		(function () {
+			const savedTheme = localStorage.getItem('theme');
+			if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+				document.documentElement.setAttribute('data-theme', 'dark');
+				// 添加一个类来禁用初始加载时的过渡动画
+				document.documentElement.classList.add('theme-transition-disabled');
+			}
+		})();
+		// 在页面加载后短暂延迟再启用过渡效果
+		window.addEventListener('load', function () {
+			setTimeout(function () {
+				document.documentElement.classList.remove('theme-transition-disabled');
+			}, 100);
+		});
+	</script>
 	<!--suppress CssUnusedSymbol -->
 	<style>
+        :root {
+            --body-bg: #fff;
+            --text-color: #333;
+            --heading-color: #0366d6;
+            --link-color: #0366d6;
+            --border-color: #eee;
+            --file-icon-color: #444;
+            --file-date-color: #666;
+            --breadcrumb-bg: #f8f9fa;
+        }
+
+        [data-theme="dark"] {
+            --body-bg: #121212;
+            --text-color: #e0e0e0;
+            --heading-color: #58a6ff;
+            --link-color: #58a6ff;
+            --border-color: #333;
+            --file-icon-color: #aaa;
+            --file-date-color: #999;
+            --breadcrumb-bg: #1e1e1e;
+        }
+
+        /* 禁��初始加载时的过渡动画 */
+        .theme-transition-disabled,
+        .theme-transition-disabled * {
+            transition: none !important;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
             line-height: 1.6;
-            color: #333;
+            color: var(--text-color);
+            background-color: var(--body-bg);
             padding: 20px;
             max-width: 1200px;
             margin: 0 auto;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         h1, h2, h3 {
-            color: #0366d6;
+            color: var(--heading-color);
         }
 
         a {
-            color: #0366d6;
+            color: var(--link-color);
             text-decoration: none;
         }
 
@@ -31,7 +79,7 @@
         .breadcrumb {
             margin-bottom: 20px;
             padding: 8px 15px;
-            background-color: #f8f9fa;
+            background-color: var(--breadcrumb-bg);
             border-radius: 4px;
         }
 
@@ -42,7 +90,7 @@
 
         .file-list li {
             padding: 8px 0;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--border-color);
             display: flex;
             align-items: center;
         }
@@ -51,7 +99,7 @@
             margin-right: 10px;
             width: 20px;
             text-align: center;
-            color: #444;
+            color: var(--file-icon-color);
         }
 
         .folder-icon {
@@ -71,7 +119,7 @@
         }
 
         .file-date {
-            color: #666;
+            color: var(--file-date-color);
             font-size: 0.85em;
             margin-left: 10px;
         }
@@ -115,9 +163,101 @@
             width: 2em;
             height: 2em;
         }
+
+        /* 暗色模式开关样��� */
+        .theme-switch-wrapper {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .theme-switch {
+            display: inline-block;
+            position: relative;
+            width: 60px;
+            height: 34px;
+        }
+
+        .theme-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        input:checked + .slider {
+            background-color: #2196F3;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .theme-icon {
+            margin: 0 8px;
+            height: 24px;
+            width: 24px;
+        }
+
+        @media (max-width: 600px) {
+            .theme-switch-wrapper {
+                top: 10px;
+                right: 10px;
+            }
+
+            .theme-switch {
+                width: 50px;
+                height: 28px;
+            }
+
+            .slider:before {
+                height: 20px;
+                width: 20px;
+            }
+
+            input:checked + .slider:before {
+                transform: translateX(22px);
+            }
+        }
 	</style>
 	<!-- SVG 图标定义 -->
 	<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+		<!-- 暗色模式图标 - 月亮 -->
+		<symbol id="icon-moon" viewBox="0 0 384 512">
+			<path d="M223.5 32C100 32 0 132.3 0 256S100 480 223.5 480c60.6 0 115.5-24.2 155.8-63.4c5-4.9 6.3-12.5 3.1-18.7s-10.1-9.7-17-8.5c-9.8 1.7-19.8 2.6-30.1 2.6c-96.9 0-175.5-78.8-175.5-176c0-65.8 36-123.1 89.3-153.3c6.1-3.5 9.2-10.5 7.7-17.3s-7.3-11.9-14.3-12.5c-6.3-.5-12.6-.8-19-.8z"/>
+		</symbol>
+		<!-- 暗色模式图标 - 太阳 -->
+		<symbol id="icon-sun" viewBox="0 0 512 512">
+			<path d="M361.5 1.2c5 2.1 8.6 6.6 9.6 11.9L391 121l107.9 19.8c5.3 1 9.8 4.6 11.9 9.6s1.5 10.7-1.6 15.2L446.9 256l62.3 90.3c3.1 4.5 3.7 10.2 1.6 15.2s-6.6 8.6-11.9 9.6L391 391 371.1 498.9c-1 5.3-4.6 9.8-9.6 11.9s-10.7 1.5-15.2-1.6L256 446.9l-90.3 62.3c-4.5 3.1-10.2 3.7-15.2 1.6s-8.6-6.6-9.6-11.9L121 391 13.1 371.1c-5.3-1-9.8-4.6-11.9-9.6s-1.5-10.7 1.6-15.2L65.1 256 2.8 165.7c-3.1-4.5-3.7-10.2-1.6-15.2s6.6-8.6 11.9-9.6L121 121 140.9 13.1c1-5.3 4.6-9.8 9.6-11.9s10.7-1.5 15.2 1.6L256 65.1 346.3 2.8c4.5-3.1 10.2-3.7 15.2-1.6zM160 256a96 96 0 1 1 192 0 96 96 0 1 1 -192 0zm224 0a128 128 0 1 0 -256 0 128 128 0 1 0 256 0z"/>
+		</symbol>
 		<!-- 箱子存档图标 -->
 		<symbol id="icon-box-archive" viewBox="0 0 512 512">
 			<path d="M32 32H480c17.7 0 32 14.3 32 32V96c0 17.7-14.3 32-32 32H32C14.3 128 0 113.7 0 96V64C0 46.3 14.3 32 32 32zm0 128H480V416c0 35.3-28.7 64-64 64H96c-35.3 0-64-28.7-64-64V160zm128 80c0 8.8 7.2 16 16 16H336c8.8 0 16-7.2 16-16s-7.2-16-16-16H176c-8.8 0-16 7.2-16 16z"/>
@@ -169,6 +309,19 @@
 	</svg>
 </head>
 <body>
+<!-- 添加暗色模式开关 -->
+<div class="theme-switch-wrapper">
+	<svg class="svg-icon theme-icon">
+		<use xlink:href="#icon-sun"></use>
+	</svg>
+	<label class="theme-switch">
+		<input type="checkbox" id="theme-toggle">
+		<span class="slider"></span>
+	</label>
+	<svg class="svg-icon theme-icon">
+		<use xlink:href="#icon-moon"></use>
+	</svg>
+</div>
 <h1>
 	<svg class="svg-icon">
 		<use xlink:href="#icon-box-archive"></use>
@@ -186,6 +339,43 @@
 </div>
 <script>
 	document.addEventListener('DOMContentLoaded', function () {
+		// 暗色模式切换功能
+		const themeToggle = document.getElementById('theme-toggle');
+		const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+		// 获取当前保存的主题或系统偏好
+		const getCurrentTheme = () => {
+			const savedTheme = localStorage.getItem('theme');
+			if (savedTheme) {
+				return savedTheme;
+			}
+			return prefersDarkScheme.matches ? 'dark' : 'light';
+		};
+		// 应用主题
+		const applyTheme = (theme) => {
+			if (theme === 'dark') {
+				document.documentElement.setAttribute('data-theme', 'dark');
+				themeToggle.checked = true;
+			} else {
+				document.documentElement.removeAttribute('data-theme');
+				themeToggle.checked = false;
+			}
+		};
+		// 切换主题
+		const toggleTheme = () => {
+			const theme = themeToggle.checked ? 'dark' : 'light';
+			applyTheme(theme);
+			localStorage.setItem('theme', theme);
+		};
+		// 初始化主题
+		applyTheme(getCurrentTheme());
+		// 监听主题切换事件
+		themeToggle.addEventListener('change', toggleTheme);
+		// 监听系统主题变化
+		prefersDarkScheme.addEventListener('change', (e) => {
+			if (!localStorage.getItem('theme')) {
+				applyTheme(e.matches ? 'dark' : 'light');
+			}
+		});
 		// 获取当前URL及参数
 		const urlParams = new URLSearchParams(window.location.search);
 		const baseUrl = window.location.href.split('?')[0];
@@ -266,7 +456,7 @@
 			// 检查目录是否为空（不包括".."项）
 			if (files.length === 0) html += '<li><svg class="svg-icon"><use xlink:href="#icon-info-circle"></use></svg> 此目录为空</li>';
 			else {
-				// 首先显示目录
+				// 首先显��目录
 				const folders = files.filter(f => f.isDirectory);
 				folders.forEach(folder => {
 					const folderPath = currentDir ? currentDir + '/' + folder.name : folder.name;
@@ -299,7 +489,7 @@
 		// 初始化页面由外部JSON文件加载后调用
 		window.renderContent = renderContent;
 	});
-	// 从外部JSON文件加载仓库结构数据
+	// 从外��JSON文件加载仓库结构数据
 	fetch('./index-cache.json')
 		.then(response => response.json())
 		.then(repoStructure => {
