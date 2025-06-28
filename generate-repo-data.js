@@ -19,28 +19,18 @@ const OUTPUT_JSON_FILE = 'index-cache.json';
  */
 function scanDirectory(dirPath, relativePath = '') {
 	const result = [];
-	try {
-		if (!fs.existsSync(dirPath)) {
-			console.warn(`Directory does not exist: ${dirPath}`);
-			return result;
-		}
-		const items = fs.readdirSync(dirPath);
-		for (const item of items) {
-			// 跳过隐藏文件和特定文件
-			if (item.startsWith('.') || item === 'index.html' || item === 'generate-repo-data.js' || item === 'node_modules' || item === '.github') continue;
-			const itemPath = path.join(dirPath, item);
-			const stats = fs.statSync(itemPath);
-			const isDirectory = stats.isDirectory();
-			// 如果是根目录，只添加指定的目标目录
-			if (relativePath === '' && !TARGET_DIRS.includes(item)) {
-				continue;
-			}
-			result.push({
-				name: item, isDirectory: isDirectory, lastModified: stats.mtime.toISOString()
-			});
-		}
-	} catch (error) {
-		console.error(`Error scanning directory ${dirPath}:`, error);
+	if (!fs.existsSync(dirPath)) {
+		console.warn(`Directory does not exist: ${dirPath}`);
+		return result;
+	}
+	const items = fs.readdirSync(dirPath);
+	for (const item of items) {
+		const itemPath = path.join(dirPath, item);
+		const stats = fs.statSync(itemPath);
+		const isDirectory = stats.isDirectory();
+		// 如果是根目录，只添加指定的目标目录
+		if (relativePath === '' && !TARGET_DIRS.includes(item)) continue;
+		result.push({name: item, isDirectory: isDirectory, lastModified: stats.mtime.toISOString()});
 	}
 	return result;
 }
@@ -55,32 +45,20 @@ function generateRepositoryStructure() {
 	repoStructure[''] = scanDirectory(REPO_ROOT);
 	// 递归扫描子目录
 	function scanSubdirectories(dirPath, relativePath) {
-		try {
-			if (!fs.existsSync(dirPath)) {
-				return;
-			}
-			const items = fs.readdirSync(dirPath);
-			for (const item of items) {
-				// 跳过隐藏文件和特定文件
-				if (item.startsWith('.')) {
-					continue;
-				}
-				const itemPath = path.join(dirPath, item);
-				const stats = fs.statSync(itemPath);
-				if (stats.isDirectory()) {
-					const newRelativePath = relativePath ? `${relativePath}/${item}` : item;
-					// 只递归扫描目标目录或其子目录
-					const shouldScan = TARGET_DIRS.some(targetDir => {
-						return newRelativePath === targetDir || newRelativePath.startsWith(`${targetDir}/`);
-					});
-					if (shouldScan) {
-						repoStructure[newRelativePath] = scanDirectory(itemPath, newRelativePath);
-						scanSubdirectories(itemPath, newRelativePath);
-					}
-				}
-			}
-		} catch (error) {
-			console.error(`Error scanning subdirectories at ${dirPath}:`, error);
+		if (!fs.existsSync(dirPath)) return;
+		for (const item of fs.readdirSync(dirPath)) {
+			// 跳过隐藏文件和特定文件
+			if (item.startsWith('.')) continue;
+			const itemPath = path.join(dirPath, item);
+			const stats = fs.statSync(itemPath);
+			if (!stats.isDirectory()) continue;
+			const newRelativePath = relativePath ? `${relativePath}/${item}` : item;
+			const shouldScan = TARGET_DIRS.some(targetDir => {
+				return newRelativePath === targetDir || newRelativePath.startsWith(`${targetDir}/`);
+			});
+			if (!shouldScan) continue;
+			repoStructure[newRelativePath] = scanDirectory(itemPath, newRelativePath);
+			scanSubdirectories(itemPath, newRelativePath);
 		}
 	}
 	// 开始递归扫描
