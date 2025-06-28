@@ -26,21 +26,60 @@ jobs:
         run: chmod +x gradlew
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
-      - name: Commit and Push Changes
-        run: |
-          mkdir -p ./build/pages
-          mkdir -p ./snapshots
-          cp -r ./snapshots ./build/pages/snapshots
-          mkdir -p ./releases
-          cp -r ./releases ./build/pages/releases
-          mkdir -p ./plugins
-          cp -r ./plugins ./build/pages/plugins
       - name: Execute Gradle build
         run: ./gradlew build
+      - name: Create dir if not exists
+        run: |
+          if [ ! -d "releases" ]; then
+            echo "Creating directory..."
+            mkdir -p release
+            touch releases/.placeholder
+          else
+            echo "directory already exists"
+          fi
+
+          if [ ! -d "snapshots" ]; then
+            echo "Creating directory..."
+            mkdir -p release
+            touch snapshots/.placeholder
+          else
+            echo "directory already exists"
+          fi
+
+          if [ ! -d "plugins" ]; then
+            echo "Creating directory..."
+            mkdir -p release
+            touch plugins/.placeholder
+          else
+            echo "directory already exists"
+          fi
+          if [ ! -d "build/pages" ]; then
+            echo "Creating directory..."
+            mkdir -p build/pages
+          else
+            echo "directory already exists"
+          fi
+          
+      - name: Copy dir to build pages
+        run: |
+          echo "Copy dir to build/pages"   
+          cp -r releases build/pages/ 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: './build/pages/plugins'
+      - name: Verify copy
+        run: |
+          echo "Directory structure:"
+          ls -l
+          echo "Build directory content:"
+          ls -l build/pages/
+          echo "Releases directory content:"
+          ls -l releases/
+          echo "Snapshots directory content:"
+          ls -l snapshots/
+          echo "Plugins directory content:"
+          ls -l plugins/
   deploy:
     environment:
       name: github-pages
