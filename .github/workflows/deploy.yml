@@ -27,11 +27,14 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
       - name: Execute Gradle build
-        run: ./gradlew jsBrowserDistribution
+        run: ./gradlew init
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './build/dist/js/productionExecutable'
+          path: |
+            ./releases
+            ./snapshots
+            ./plugins
   deploy:
     environment:
       name: github-pages
