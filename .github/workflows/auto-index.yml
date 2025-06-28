@@ -75,7 +75,7 @@ jobs:
           timestamp=$(date +%s000)
           description=Maven repository hosted on GitHub
           EOF
-          
+
           du -sh ./releases/.index
           du -sh ./snapshots/.index
           du -sh ./plugins/.index
@@ -83,7 +83,7 @@ jobs:
       - name: Generate HTML index
         run: |
           REPOS=("releases" "snapshots" "plugins")
-          REPO_TITLES=("Release 版本" "Snapshot 版本" "插件")
+          REPO_TITLES=("Release" "Snapshot" "Plugin")
           TIMESTAMP=$(date "+%Y-%m-%d %H:%M:%S")
           REPO_OWNER="${GITHUB_REPOSITORY_OWNER}"
           REPO_NAME="${GITHUB_REPOSITORY#*/}"
@@ -197,9 +197,9 @@ jobs:
             <div class="container">
               <p>这是一个托管在 GitHub Pages 上的 Maven 仓库。选择下面的仓库类型进行访问：</p>
               <ul class="repository-list">
-                <li><a href="./releases/">Release 仓库</a> - 稳定版本组件</li>
-                <li><a href="./snapshots/">Snapshot 仓库</a> - 开发版本组件</li>
-                <li><a href="./plugins/">Plugins 仓库</a> - Maven 插件</li>
+                <li><a href="./releases/">Release</li>
+                <li><a href="./snapshots/">Snapshot</li>
+                <li><a href="./plugins/">Plugins</li>
               </ul>
             </div>
             <div class="footer">
