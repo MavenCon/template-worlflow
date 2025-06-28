@@ -9,11 +9,9 @@
 		// 提前加载保存的主题设置，防止页面闪烁
 		(function () {
 			const savedTheme = localStorage.getItem('theme');
-			if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-				document.documentElement.setAttribute('data-theme', 'dark');
-				// 添加一个类来禁用初始加载时的过渡动画
-				document.documentElement.classList.add('theme-transition-disabled');
-			}
+			if (!(savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches))) return;
+			document.documentElement.setAttribute('data-theme', 'dark');
+			document.documentElement.classList.add('theme-transition-disabled');
 		})();
 		// 在页面加载后短暂延迟再启用过渡效果
 		window.addEventListener('load', function () {
