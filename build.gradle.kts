@@ -82,7 +82,6 @@ fun forEachFile(f: File, o: File) {
         .use {
             template.process(tMap, it)
         }
-    
 
     println(name)
 }
