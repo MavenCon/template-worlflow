@@ -4,82 +4,6 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Maven 仓库浏览器</title>
-	<style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        h1 {
-            border-bottom: 1px solid #eaecef;
-            padding-bottom: 0.3em;
-        }
-
-        .breadcrumb {
-            margin-bottom: 20px;
-            background-color: #f8f9fa;
-            padding: 10px;
-            border-radius: 4px;
-        }
-
-        .breadcrumb a {
-            text-decoration: none;
-            color: #0366d6;
-            margin: 0 5px;
-        }
-
-        .breadcrumb a:hover {
-            text-decoration: underline;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th {
-            text-align: left;
-            padding: 8px;
-            background-color: #f8f9fa;
-            border-bottom: 2px solid #dfe2e5;
-        }
-
-        td {
-            padding: 8px;
-            border-bottom: 1px solid #dfe2e5;
-        }
-
-        tr:hover {
-            background-color: #f6f8fa;
-        }
-
-        .folder {
-            font-weight: bold;
-            color: #0366d6;
-        }
-
-        .file {
-            color: #24292e;
-        }
-
-        .folder:before {
-            content: "📁 ";
-        }
-
-        .file:before {
-            content: "📄 ";
-        }
-
-        .loading {
-            text-align: center;
-            font-size: 1.2em;
-            margin: 40px;
-        }
-	</style>
 </head>
 <body>
 <h1>Maven 仓库浏览器</h1>
@@ -172,18 +96,41 @@
 
 		// 使用fetch API获取目录列表
 		fetch(baseUrl)
-			.then(response => response.text())
+			.then(response => {
+				if (!response.ok) {
+					throw new Error(`HTTP error! Status: ${response.status}`);
+				}
+				return response.text();
+			})
 			.then(html => {
 				// 解析HTML来提取目录和文件
 				const parser = new DOMParser();
 				const doc = parser.parseFromString(html, 'text/html');
 				const links = Array.from(doc.querySelectorAll('a'));
 
-				// 过滤掉父目录链接和其他非文件/文件夹项
+				console.log("Found links:", links.length);
+
+				// 过滤目录链接
 				const items = links.filter(a => {
 					const href = a.getAttribute('href');
-					return href !== './' && href !== 'index.html' && !href.startsWith('?') && !href.startsWith('http');
+					// 输出调试信息
+					console.log("Link:", href, a.textContent);
+
+					// 排除不是文件或目录的链接
+					if (!href || href === './' || href === 'index.html' ||
+					    href.startsWith('?') || href.startsWith('http')) {
+						return false;
+					}
+
+					// 如果是根目录，则排除上级目录链接
+					if (href === '../' && !currentPath) {
+						return false;
+					}
+
+					return true;
 				});
+
+				console.log("Filtered items:", items.length);
 
 				// 创建统一的数据结构
 				const fileList = [];
@@ -209,17 +156,20 @@
 					const href = a.getAttribute('href');
 					// 忽略父目录链接，因为我们已经手动添加了
 					if (href !== '../') {
-						const name = a.textContent.replace('/', '');
+						// 移除尾部斜杠来获取准确名称
+						const name = a.textContent.trim().replace(/\/$/, '');
 						const isFolder = href.endsWith('/');
 
 						fileList.push({
-							name: name,
+							name: name || href.replace(/\/$/, ''), // 使用href作为备用名称
 							isFolder: isFolder,
 							href: href,
 							isParent: false
 						});
 					}
 				});
+
+				console.log("Final file list:", fileList);
 
 				if (fileList.length === 0) {
 					contentDiv.innerHTML = '<p>此目录为空或无法访问。</p>';
@@ -295,7 +245,8 @@
 				contentDiv.innerHTML = tableHTML;
 			})
 			.catch(error => {
-				contentDiv.innerHTML = `<p>加载错误: ${error.message}</p>`;
+				contentDiv.innerHTML = `<p>加载错误: ${error.message}</p><p>请确保服务器已启动并支持目录浏览。</p>`;
+				console.error("Fetch error:", error);
 			});
 	}
 </script>
