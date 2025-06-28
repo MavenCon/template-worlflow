@@ -211,16 +211,19 @@
 		}
 		// 获取文件类型对应的图标
 		function getFileIcon(fileName) {
-			if (fileName.endsWith('.xml')) {
-				return '<svg class="svg-icon file-icon xml"><use xlink:href="#icon-file-code"></use></svg>';
-			} else if (fileName.endsWith('.pom')) {
-				return '<svg class="svg-icon file-icon pom"><use xlink:href="#icon-file-alt"></use></svg>';
-			} else if (fileName.endsWith('.md5')) {
-				return '<svg class="svg-icon file-icon md5"><use xlink:href="#icon-fingerprint"></use></svg>';
-			} else if (fileName.endsWith('.sha1') || fileName.endsWith('.sha256') || fileName.endsWith('.sha512')) {
-				return '<svg class="svg-icon file-icon sha1"><use xlink:href="#icon-shield-alt"></use></svg>';
-			} else {
-				return '<svg class="svg-icon file-icon"><use xlink:href="#icon-file"></use></svg>';
+			switch (fileName.split('.').pop().toLowerCase()) {
+				case 'xml':
+					return '<svg class="svg-icon file-icon xml"><use xlink:href="#icon-file-code"></use></svg>';
+				case 'pom':
+					return '<svg class="svg-icon file-icon pom"><use xlink:href="#icon-file-alt"></use></svg>';
+				case 'md5':
+					return '<svg class="svg-icon file-icon md5"><use xlink:href="#icon-fingerprint"></use></svg>';
+				case 'sha1':
+				case 'sha256':
+				case 'sha512':
+					return '<svg class="svg-icon file-icon sha1"><use xlink:href="#icon-shield-alt"></use></svg>';
+				default:
+					return '<svg class="svg-icon file-icon"><use xlink:href="#icon-file"></use></svg>';
 			}
 		}
 		// 生成可点击的路径标题
@@ -241,67 +244,61 @@
 		// 生成内容HTML
 		async function renderContent() {
 			const contentElement = document.getElementById('content');
-			try {
-				// 加载当前目录的内容
-				const files = await loadDirectoryContents(currentDir);
-				let html = '';
-				// 添加可点击的路径标题
-				html += generateClickablePath(currentDir);
-				// 列出文件和目录
-				html += '<ul class="file-list">';
-				// 如果在子目录中，添加返回上层目录项
-				if (currentDir) {
-					const parentDir = currentDir.includes('/') ?
-						currentDir.substring(0, currentDir.lastIndexOf('/')) :
-						'';
-					html += `<li>
+			// 加载当前目录的内容
+			const files = await loadDirectoryContents(currentDir);
+			let html = '';
+			// 添加可点击的路径标题
+			html += generateClickablePath(currentDir);
+			// 列出文件和目录
+			html += '<ul class="file-list">';
+			// 如果在子目录中，添加返回上层目录项
+			if (currentDir) {
+				const parentDir = currentDir.includes('/') ?
+					currentDir.substring(0, currentDir.lastIndexOf('/')) :
+					'';
+				html += `<li>
 						<a href="${baseUrl}${parentDir ? '?path=' + encodeURIComponent(parentDir) : ''}">
 							<svg class="svg-icon folder-icon file-icon"><use xlink:href="#icon-folder"></use></svg>
 						</a>
 						<div class="file-name"><a href="${baseUrl}${parentDir ? '?path=' + encodeURIComponent(parentDir) : ''}">..</a></div>
 					</li>`;
-				}
-				// 检查目录是否为空（不包括".."项）
-				if (files.length === 0) html += '<li><svg class="svg-icon"><use xlink:href="#icon-info-circle"></use></svg> 此目录为空</li>';
-				else {
-					// 首先显示目录
-					const folders = files.filter(f => f.isDirectory);
-					folders.forEach(folder => {
-						const folderPath = currentDir ? currentDir + '/' + folder.name : folder.name;
-						html += `<li>
+			}
+			// 检查目录是否为空（不包括".."项）
+			if (files.length === 0) html += '<li><svg class="svg-icon"><use xlink:href="#icon-info-circle"></use></svg> 此目录为空</li>';
+			else {
+				// 首先显示目录
+				const folders = files.filter(f => f.isDirectory);
+				folders.forEach(folder => {
+					const folderPath = currentDir ? currentDir + '/' + folder.name : folder.name;
+					html += `<li>
 							<a href="${baseUrl}?path=${encodeURIComponent(folderPath)}">
 								<svg class="svg-icon folder-icon file-icon"><use xlink:href="#icon-folder"></use></svg>
 							</a>
 							<div class="file-name"><a href="${baseUrl}?path=${encodeURIComponent(folderPath)}">${folder.name}</a></div>
 						</li>`;
-					});
-					// 然后显示文件
-					const onlyFiles = files.filter(f => !f.isDirectory);
-					onlyFiles.forEach(file => {
-						// 确定正确的文件路径，根据currentDir的第一部分决定是哪个仓库目录
-						let filePath;
-						filePath = currentDir ? currentDir + '/' + file.name : file.name;
-						const formattedDate = new Date(file.lastModified).toLocaleString();
-						html += `<li>
+				});
+				// 然后显示文件
+				const onlyFiles = files.filter(f => !f.isDirectory);
+				onlyFiles.forEach(file => {
+					// 确定正确的文件路径，根据currentDir的第一部分决定是哪个仓库目录
+					let filePath;
+					filePath = currentDir ? currentDir + '/' + file.name : file.name;
+					const formattedDate = new Date(file.lastModified).toLocaleString();
+					html += `<li>
 							<a href="${baseUrl}${filePath}" target="_blank">
 								${getFileIcon(file.name)}
 							</a>
 							<div class="file-name"><a href="${baseUrl}${filePath}" target="_blank">${file.name}</a></div>
 							<span class="file-date"><svg class="svg-icon"><use xlink:href="#icon-clock"></use></svg> ${formattedDate}</span>
 						</li>`;
-					});
-				}
-				html += '</ul>';
-				contentElement.innerHTML = html;
-			} catch (error) {
-				contentElement.innerHTML = `<div class="error"><svg class="svg-icon"><use xlink:href="#icon-exclamation-triangle"></use></svg> 加载目录内容失败: ${error.message}</div>`;
+				});
 			}
+			html += '</ul>';
+			contentElement.innerHTML = html;
 		}
 		// 初始化页面由外部JSON文件加载后调用
 		window.renderContent = renderContent;
 	});
-</script>
-<script>
 	// 从外部JSON文件加载仓库结构数据
 	fetch('./index-cache.json')
 		.then(response => response.json())
