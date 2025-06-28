@@ -41,41 +41,28 @@ jobs:
           mkdir -p snapshots/.index
           mkdir -p plugins/.index
           
-          # 生成索引（不要提前创建属性文件）
+          # 生成releases仓库索引
           java -jar indexer-cli.jar \
-            -c \
-            -i ./snapshots/.index \
-            -n github-snapshots-repo \
-            -r snapshots
-          
-          # 生成属性文件
-          cat <<EOF > ./releases/.index/nexus-maven-repository-index.properties
-          #Nexus Index Properties
-          version=1
-          incremental=false
-          repositoryId=github-releases-repo
-          timestamp=$(date +%s000)
-          description=Maven repository hosted on GitHub
-          EOF
-          
-          cat <<EOF > ./snapshots/.index/nexus-maven-repository-index.properties
-          #Nexus Index Properties
-          version=1
-          incremental=false
-          repositoryId=github-snapshots-repo
-          timestamp=$(date +%s000)
-          description=Maven repository hosted on GitHub
-          EOF
-          
-          cat <<EOF > ./plugins/.index/nexus-maven-repository-index.properties
-          #Nexus Index Properties
-          version=1
-          incremental=false
-          repositoryId=github-plugins-repo
-          timestamp=$(date +%s000)
-          description=Maven repository hosted on GitHub
-          EOF
+            -rrid github-releases-repo \
+            -d releases/.index \
+            -r releases \
+            -i releases
 
+          # 生成snapshots仓库索引
+          java -jar indexer-cli.jar \
+            -rrid github-snapshots-repo \
+            -d snapshots/.index \
+            -r snapshots \
+            -i snapshots
+            
+          # 生成plugins仓库索引
+          java -jar indexer-cli.jar \
+            -rrid github-plugins-repo \
+            -d plugins/.index \
+            -r plugins \
+            -i plugins
+          
+          # 查看索引大小
           du -sh ./releases/.index
           du -sh ./snapshots/.index
           du -sh ./plugins/.index
