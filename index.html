@@ -123,11 +123,9 @@
 					}
 
 					// 如果是根目录，则排除上级目录链接
-					if (href === '../' && !currentPath) {
-						return false;
-					}
+					return !(href === '../' && !currentPath);
 
-					return true;
+
 				});
 
 				console.log("Filtered items:", items.length);
