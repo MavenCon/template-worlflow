@@ -88,51 +88,7 @@ jobs:
           REPO_OWNER="${GITHUB_REPOSITORY_OWNER}"
           REPO_NAME="${GITHUB_REPOSITORY#*/}"
           
-          # 创建通用 CSS 样式文件
-          cat > style.css << EOF
-          body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-            line-height: 1.6;
-            color: #24292e;
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 20px;
-          }
-          h1, h2, h3 { 
-            border-bottom: 1px solid #eaecef;
-            padding-bottom: 10px;
-            margin-top: 0;
-            color: #24292e;
-          }
-          .container {
-            background-color: #f6f8fa;
-            border-radius: 6px;
-            padding: 15px;
-            margin-bottom: 20px;
-          }
-          pre {
-            background-color: #f1f1f1;
-            border-radius: 3px;
-            padding: 10px;
-            overflow-x: auto;
-          }
-          code {
-            font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
-          }
-          .repository-list {
-            list-style-type: none;
-            padding-left: 0;
-          }
-          .footer {
-            margin-top: 30px;
-            font-size: 12px;
-            color: #666;
-            border-top: 1px solid #eaecef;
-            padding-top: 10px;
-          }
-          EOF
-          
-          # 生成子仓库索引页面（Markdown格式）
+          # 生成子仓库索引页面（纯Markdown格式）
           for i in "${!REPOS[@]}"; do
             repo="${REPOS[$i]}"
             title="${REPO_TITLES[$i]}"
@@ -148,7 +104,7 @@ jobs:
             if [ -d "./$repo/org" ]; then
               echo "### org" >> ./$repo/index.md
           
-              # 扫描并生成组织和项目的层级结构
+              # 扫描并生成组织和项目的层级结��
               for groupId in $(find ./$repo/org -mindepth 1 -maxdepth 1 -type d | sort); do
                 groupName=$(basename "$groupId")
                 echo "- [$groupName](org/$groupName/index.md)" >> ./$repo/index.md
@@ -192,7 +148,7 @@ jobs:
           EOF
           done
           
-          # 生成主页（Markdown格式）
+          # 生成主页（纯Markdown格式）
           cat > ./index.md << EOF
           # Maven 仓库索引
           
@@ -207,45 +163,7 @@ jobs:
           最后更新时间: $TIMESTAMP
           EOF
 
-      # 创建一个简单的主页以重定向到Markdown索引
-      - name: Generate HTML Redirects
-        run: |
-          # 生成主HTML页面（重定向到Markdown）
-          cat > ./index.html << EOF
-          <!DOCTYPE html>
-          <html lang="zh-CN">
-          <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <meta http-equiv="refresh" content="0;url=index.md">
-            <title>Maven 仓库索引</title>
-            <link rel="stylesheet" href="style.css">
-          </head>
-          <body>
-            <p>如果未自动跳转，请<a href="index.md">点击这里</a>。</p>
-          </body>
-          </html>
-          EOF
-          
-          # 为子仓库创建HTML重定向
-          for repo in "releases" "snapshots" "plugins"; do
-            cat > ./$repo/index.html << EOF
-          <!DOCTYPE html>
-          <html lang="zh-CN">
-          <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <meta http-equiv="refresh" content="0;url=index.md">
-            <title>Maven 仓库</title>
-            <link rel="stylesheet" href="../style.css">
-          </head>
-          <body>
-            <p>如果未自动跳转，请<a href="index.md">点击这里</a>。</p>
-          </body>
-          </html>
-          EOF
-          done
-
+      # 生成Maven索引和Markdown文档后直接提交
       - name: Commit and push index
         run: |
           # 配置git用户
@@ -254,8 +172,10 @@ jobs:
           
           # 检查是否有索引文件变化
           git add releases/.index snapshots/.index plugins/.index
-          git add releases/index.html snapshots/index.html plugins/index.html
-          git add index.html style.css
+          git add index.md releases/index.md snapshots/index.md plugins/index.md
+          
+          # 添加所有生成的索引文件
+          find . -name "index.md" -exec git add {} \;
           
           if ! git diff --cached --quiet; then
             git commit -m "Update Maven repository index [skip ci]"
