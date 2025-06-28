@@ -26,15 +26,21 @@ jobs:
         run: chmod +x gradlew
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+      - name: Commit and Push Changes
+        run: |
+          mkdir -p ./build/pages
+          mkdir -p ./snapshots
+          cp -r ./snapshots ./build/pages/snapshots
+          mkdir -p ./releases
+          cp -r ./releases ./build/pages/releases
+          mkdir -p ./plugins
+          cp -r ./plugins ./build/pages/plugins
       - name: Execute Gradle build
         run: ./gradlew init
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: |
-            ./releases
-            ./snapshots
-            ./plugins
+          path: './build/pages/plugins'
   deploy:
     environment:
       name: github-pages
