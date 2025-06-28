@@ -1,7 +1,7 @@
 /**
  * 生成仓库结构数据的脚本
  * 这个脚本会扫描releases、plugins和snapshots目录，生成仓库结构的JSON数据
- * 然后注入到index.html中
+ * 然后保存到单独的JSON文件中
  */
 const fs = require('fs');
 const path = require('path');
@@ -10,9 +10,11 @@ const path = require('path');
 const REPO_ROOT = path.join(__dirname);
 // 要处理的目录列表
 const TARGET_DIRS = ['releases', 'plugins', 'snapshots'];
+// 输出的JSON文件名
+const OUTPUT_JSON_FILE = 'repo-structure.json';
 
 /**
- * 递归扫描目录，生成目录结构数据
+ * 递归扫描目录，��成目录结构数据
  * @param {string} dirPath 要扫描的目录路径
  * @param {string} relativePath 相对于仓库根目录的路径
  * @returns {Array} 目录内容的数组
@@ -112,37 +114,76 @@ function generateRepositoryStructure() {
 }
 
 /**
- * 将仓库结构数据注入到HTML文件中
- * @param {string} htmlFilePath HTML文件路径
+ * 将仓库结构数据保存到JSON文件中
  * @param {Object} repoStructure 仓库结构数据
  */
-function injectStructureToHtml(htmlFilePath, repoStructure) {
+function saveStructureToFile(repoStructure) {
+	try {
+		// 转换为JSON字符串
+		const repoStructureJson = JSON.stringify(repoStructure, null, 2);
+		const outputPath = path.join(__dirname, OUTPUT_JSON_FILE);
+
+		// 写入到文件
+		fs.writeFileSync(outputPath, repoStructureJson);
+		console.log(`Repository structure data has been saved to ${outputPath}`);
+	} catch (error) {
+		console.error(`Error saving structure to file:`, error);
+	}
+}
+
+/**
+ * 更新HTML文件中的脚本引用
+ * @param {string} htmlFilePath HTML文件路径
+ */
+function updateHtmlScriptReference(htmlFilePath) {
 	try {
 		let htmlContent = fs.readFileSync(htmlFilePath, 'utf8');
 
-		// 转换为JSON字符串
-		const repoStructureJson = JSON.stringify(repoStructure, null, 2);
-
-		// 创建数据脚本标签内容
-		const scriptContent = `<script id="repo-structure-data" type="application/json">
-${repoStructureJson}
-</script>`;
-
-		// 查找并替换已有的数据脚本标签，或在</body>前添加
+		// 如果有旧的内嵌数据，则替换为引用外部文件的脚本
 		if (htmlContent.includes('id="repo-structure-data"')) {
-			htmlContent = htmlContent.replace(/<script id="repo-structure-data"[^>]*>[\s\S]*?<\/script>/, scriptContent);
+			htmlContent = htmlContent.replace(/<script id="repo-structure-data"[^>]*>[\s\S]*?<\/script>/, `<script>
+	// 从外部JSON文件加载仓库结构数据
+	fetch('./${OUTPUT_JSON_FILE}')
+		.then(response => response.json())
+		.then(repoStructure => {
+			window.repoStructure = repoStructure;
+			// 初始化页面
+			renderContent();
+		})
+		.catch(error => {
+			document.getElementById('content').innerHTML = 
+				\`<div class="error"><i class="fas fa-exclamation-triangle"></i> 加载仓库数据失败: \${error.message}</div>\`;
+		});
+</script>`);
 		} else {
-			htmlContent = htmlContent.replace('</body>', scriptContent + '\n</body>');
+			// 如果没有找到旧的脚本标签，在</body>前添加新的脚本引用
+			const scriptTag = `<script>
+	// 从外部JSON文件加载仓库结构数据
+	fetch('./${OUTPUT_JSON_FILE}')
+		.then(response => response.json())
+		.then(repoStructure => {
+			window.repoStructure = repoStructure;
+			// 初始化页面
+			renderContent();
+		})
+		.catch(error => {
+			document.getElementById('content').innerHTML = 
+				\`<div class="error"><i class="fas fa-exclamation-triangle"></i> 加载仓库数据失败: \${error.message}</div>\`;
+		});
+</script>
+`;
+			htmlContent = htmlContent.replace('</body>', scriptTag + '</body>');
 		}
 
 		fs.writeFileSync(htmlFilePath, htmlContent);
-		console.log(`Repository structure data has been injected into ${htmlFilePath}`);
+		console.log(`HTML file ${htmlFilePath} has been updated to reference external JSON data`);
 	} catch (error) {
-		console.error(`Error injecting structure into HTML:`, error);
+		console.error(`Error updating HTML script reference:`, error);
 	}
 }
 
 // 执行生成过程
 const repoStructure = generateRepositoryStructure();
-injectStructureToHtml(path.join(__dirname, 'index.html'), repoStructure);
+saveStructureToFile(repoStructure);
+updateHtmlScriptReference(path.join(__dirname, 'index.html'));
 console.log('Repository structure data generation completed!');
