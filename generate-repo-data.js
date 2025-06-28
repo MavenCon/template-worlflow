@@ -30,8 +30,7 @@ function scanDirectory(dirPath, relativePath = '') {
 
 		for (const item of items) {
 			// 跳过隐藏文件和特定文件
-			if (item.startsWith('.') || item === 'index.html' || item === 'generate-repo-data.js' ||
-				item === 'node_modules' || item === '.github') {
+			if (item.startsWith('.') || item === 'index.html' || item === 'generate-repo-data.js' || item === 'node_modules' || item === '.github') {
 				continue;
 			}
 
@@ -45,9 +44,7 @@ function scanDirectory(dirPath, relativePath = '') {
 			}
 
 			result.push({
-				name: item,
-				isDirectory: isDirectory,
-				lastModified: stats.mtime.toISOString()
+				name: item, isDirectory: isDirectory, lastModified: stats.mtime.toISOString()
 			});
 		}
 	} catch (error) {
