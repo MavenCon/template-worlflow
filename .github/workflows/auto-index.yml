@@ -41,33 +41,46 @@ jobs:
           mkdir -p snapshots/.index
           mkdir -p plugins/.index
           
-          # 生成releases仓库索引
+          # 生成索引（不要提前创建属性文件）
           java -jar indexer-cli.jar \
-            -rrid github-releases-repo \
-            -d releases/.index \
-            -r releases \
-            -i releases
+            -c \
+            -i ./snapshots/.index \
+            -n github-snapshots-repo \
+            -r snapshots
 
-          # 生成snapshots仓库索引
-          java -jar indexer-cli.jar \
-            -rrid github-snapshots-repo \
-            -d snapshots/.index \
-            -r snapshots \
-            -i snapshots
-            
-          # 生成plugins仓库索引
-          java -jar indexer-cli.jar \
-            -rrid github-plugins-repo \
-            -d plugins/.index \
-            -r plugins \
-            -i plugins
+          # 生成属性文件
+          cat <<EOF > ./releases/.index/nexus-maven-repository-index.properties
+          #Nexus Index Properties
+          version=1
+          incremental=false
+          repositoryId=github-releases-repo
+          timestamp=$(date +%s000)
+          description=Maven repository hosted on GitHub
+          EOF
           
-          # 查看索引大小
+          cat <<EOF > ./snapshots/.index/nexus-maven-repository-index.properties
+          #Nexus Index Properties
+          version=1
+          incremental=false
+          repositoryId=github-snapshots-repo
+          timestamp=$(date +%s000)
+          description=Maven repository hosted on GitHub
+          EOF
+          
+          cat <<EOF > ./plugins/.index/nexus-maven-repository-index.properties
+          #Nexus Index Properties
+          version=1
+          incremental=false
+          repositoryId=github-plugins-repo
+          timestamp=$(date +%s000)
+          description=Maven repository hosted on GitHub
+          EOF
+
           du -sh ./releases/.index
           du -sh ./snapshots/.index
           du -sh ./plugins/.index
 
-      - name: Generate HTML index
+      - name: Generate Markdown index
         run: |
           REPOS=("releases" "snapshots" "plugins")
           REPO_TITLES=("Release" "Snapshot" "Plugin")
@@ -85,7 +98,7 @@ jobs:
             margin: 0 auto;
             padding: 20px;
           }
-          h1 { 
+          h1, h2, h3 { 
             border-bottom: 1px solid #eaecef;
             padding-bottom: 10px;
             margin-top: 0;
@@ -110,21 +123,6 @@ jobs:
             list-style-type: none;
             padding-left: 0;
           }
-          .repository-list li {
-            padding: 10px;
-            background: white;
-            border: 1px solid #e1e4e8;
-            border-radius: 6px;
-            margin-bottom: 10px;
-          }
-          .repository-list li a {
-            color: #0366d6;
-            text-decoration: none;
-            font-weight: bold;
-          }
-          .repository-list li a:hover {
-            text-decoration: underline;
-          }
           .footer {
             margin-top: 30px;
             font-size: 12px;
@@ -134,67 +132,119 @@ jobs:
           }
           EOF
           
-          # 生成子仓库索引页面
+          # 生成子仓库索引页面（Markdown格式）
           for i in "${!REPOS[@]}"; do
             repo="${REPOS[$i]}"
             title="${REPO_TITLES[$i]}"
           
-            cat > ./$repo/index.html << EOF
-          <!DOCTYPE html>
-          <html lang="zh-CN">
-          <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Maven 仓库 - $title</title>
-            <link rel="stylesheet" href="../style.css">
-          </head>
-          <body>
-            <h1>Maven 仓库 - $title</h1>
-            <div class="container">
-              <p>这是一个 Maven 仓库。要在您的 Maven 项目中使用它，请将以下内容添加到您的 pom.xml 中：</p>
-              <pre><code>&lt;repositories&gt;
-            &lt;repository&gt;
-              &lt;id&gt;github-$repo-repo&lt;/id&gt;
-              &lt;name&gt;GitHub Maven Repository - $title&lt;/name&gt;
-              &lt;url&gt;https://$REPO_OWNER.github.io/$REPO_NAME/$repo&lt;/url&gt;
-            &lt;/repository&gt;
-          &lt;/repositories&gt;</code></pre>
-            </div>
-            <p><a href="../">返回主页</a></p>
-            <div class="footer">
-              最后更新时间: $TIMESTAMP
-            </div>
-          </body>
-          </html>
+            cat > ./$repo/index.md << EOF
+          # Maven 仓库 - $title
+          
+          ## 仓库内容
+          
+          EOF
+          
+            # 生成子仓库内容索引
+            if [ -d "./$repo/org" ]; then
+              echo "### org" >> ./$repo/index.md
+          
+              # 扫描并生成组织和项目的层级结构
+              for groupId in $(find ./$repo/org -mindepth 1 -maxdepth 1 -type d | sort); do
+                groupName=$(basename "$groupId")
+                echo "- [$groupName](org/$groupName/index.md)" >> ./$repo/index.md
+          
+                mkdir -p "$groupId"
+                cat > "$groupId/index.md" << GROUP_EOF
+          # $groupName
+          
+          GROUP_EOF
+          
+                for artifactId in $(find "$groupId" -mindepth 1 -maxdepth 1 -type d | sort); do
+                  artifactName=$(basename "$artifactId")
+                  echo "  - [$artifactName]($artifactName/index.md)" >> "$groupId/index.md"
+          
+                  mkdir -p "$artifactId"
+                  cat > "$artifactId/index.md" << ARTIFACT_EOF
+          # $artifactName
+          
+          ## 可用版本
+          
+          ARTIFACT_EOF
+          
+                  # 列出版本
+                  for versionDir in $(find "$artifactId" -mindepth 1 -maxdepth 1 -type d | sort); do
+                    versionName=$(basename "$versionDir")
+                    echo "- [$versionName]($versionName/)" >> "$artifactId/index.md"
+                  done
+                done
+              done
+            else
+              echo "暂无内容" >> ./$repo/index.md
+            fi
+          
+            cat >> ./$repo/index.md << EOF
+          
+          [返回主页](../index.md)
+          
+          ---
+          
+          最后更新时间: $TIMESTAMP
           EOF
           done
           
-          # 生成主页
+          # 生成主页（Markdown格式）
+          cat > ./index.md << EOF
+          # Maven 仓库索引
+          
+          这是一个托管在 GitHub Pages 上的 Maven 仓库。选择下面的仓库类型进行访问：
+          
+          - [Release](./releases/index.md)
+          - [Snapshot](./snapshots/index.md)
+          - [Plugins](./plugins/index.md)
+          
+          ---
+          
+          最后更新时间: $TIMESTAMP
+          EOF
+
+      # 创建一个简单的主页以重定向到Markdown索引
+      - name: Generate HTML Redirects
+        run: |
+          # 生成主HTML页面（重定向到Markdown）
           cat > ./index.html << EOF
           <!DOCTYPE html>
           <html lang="zh-CN">
           <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <meta http-equiv="refresh" content="0;url=index.md">
             <title>Maven 仓库索引</title>
             <link rel="stylesheet" href="style.css">
           </head>
           <body>
-            <h1>Maven 仓库索引</h1>
-            <div class="container">
-              <p>这是一个托管在 GitHub Pages 上的 Maven 仓库。选择下面的仓库类型进行访问：</p>
-              <ul class="repository-list">
-                <li><a href="./releases/">Release</li>
-                <li><a href="./snapshots/">Snapshot</li>
-                <li><a href="./plugins/">Plugins</li>
-              </ul>
-            </div>
-            <div class="footer">
-              最后更新时间: $TIMESTAMP
-            </div>
+            <p>如果未自动跳转，请<a href="index.md">点击这里</a>。</p>
           </body>
           </html>
           EOF
+          
+          # 为子仓库创建HTML重定向
+          for repo in "releases" "snapshots" "plugins"; do
+            cat > ./$repo/index.html << EOF
+          <!DOCTYPE html>
+          <html lang="zh-CN">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <meta http-equiv="refresh" content="0;url=index.md">
+            <title>Maven 仓库</title>
+            <link rel="stylesheet" href="../style.css">
+          </head>
+          <body>
+            <p>如果未自动跳转，请<a href="index.md">点击这里</a>。</p>
+          </body>
+          </html>
+          EOF
+          done
 
       - name: Commit and push index
         run: |
