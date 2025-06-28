@@ -98,16 +98,13 @@
 		<p>正在加载...</p>
 	</div>
 </div>
-
 <script>
 	document.addEventListener('DOMContentLoaded', function () {
 		// 获取当前URL及参数
 		const urlParams = new URLSearchParams(window.location.search);
 		const baseUrl = window.location.href.split('?')[0];
-
 		// 从URL参数获取当前目录，如果没有则使用根目录
 		let currentDir = urlParams.get('path') || '';
-
 		// 异步加载目录内容
 		async function loadDirectoryContents(dirPath = '') {
 			try {
@@ -118,14 +115,12 @@
 				return [];
 			}
 		}
-
 		// 从数据中获取目录内容
 		function scanDirectoryFromData(dirPath) {
 			// 使用全局的 repoStructure 变量
 			if (window.repoStructure) {
 				console.log('仓库结构数据:', window.repoStructure);
 				console.log('请求路径:', dirPath);
-
 				// 如果当前路径存在于结构数据中，返回其内容
 				if (dirPath in window.repoStructure) {
 					console.log('找到路径，内容:', window.repoStructure[dirPath]);
@@ -136,11 +131,9 @@
 			} else {
 				console.error('仓库结构数据尚未加载');
 			}
-
 			// 如果无法获取数据，则返回空数组
 			return [];
 		}
-
 		// 获取文件类型对应的图标
 		function getFileIcon(fileName) {
 			if (fileName.endsWith('.xml')) {
@@ -155,42 +148,32 @@
 				return '<i class="fas fa-file file-icon"></i>';
 			}
 		}
-
 		// 生成可点击的路径标题
 		function generateClickablePath(path) {
 			if (!path) return '<h2><i class="fas fa-folder-open"></i> 仓库根目录</h2>';
-
 			const parts = path.split('/');
 			let html = '<h2><i class="fas fa-folder-open"></i> ';
 			html += `<a href="${baseUrl}">首页</a>`;
-
 			let currentPath = '';
 			for (const part of parts) {
 				if (!part) continue;
 				currentPath += (currentPath ? '/' : '') + part;
 				html += ` / <a href="${baseUrl}?path=${encodeURIComponent(currentPath)}">${part}</a>`;
 			}
-
 			html += '</h2>';
 			return html;
 		}
-
 		// 生成内容HTML
 		async function renderContent() {
 			const contentElement = document.getElementById('content');
-
 			try {
 				// 加载当前目录的内容
 				const files = await loadDirectoryContents(currentDir);
-
 				let html = '';
-
 				// 添加可点击的路径标题
 				html += generateClickablePath(currentDir);
-
 				// 列出文件和目录
 				html += '<ul class="file-list">';
-
 				// 如果在子目录中，添加返回上层目录项
 				if (currentDir) {
 					const parentDir = currentDir.includes('/') ?
@@ -203,7 +186,6 @@
 						<div class="file-name"><a href="${baseUrl}${parentDir ? '?path=' + encodeURIComponent(parentDir) : ''}">..</a></div>
 					</li>`;
 				}
-
 				// 检查目录是否为空（不包括".."项）
 				if (files.length === 0) {
 					html += '<li><i class="fas fa-info-circle"></i> 此目录为空</li>';
@@ -219,19 +201,12 @@
 							<div class="file-name"><a href="${baseUrl}?path=${encodeURIComponent(folderPath)}">${folder.name}</a></div>
 						</li>`;
 					});
-
 					// 然后显示文件
 					const onlyFiles = files.filter(f => !f.isDirectory);
 					onlyFiles.forEach(file => {
 						// 确定正确的文件路径，根据currentDir的第一部分决定是哪个仓库目录
 						let filePath;
-						if (currentDir) {
-							// 当在子目录时
-							filePath = currentDir + '/' + file.name;
-						} else {
-							// 当在根目录时
-							filePath = file.name;
-						}
+						filePath = currentDir ? currentDir + '/' + file.name : file.name;
 						const formattedDate = new Date(file.lastModified).toLocaleString();
 						html += `<li>
 							<a href="${baseUrl}${filePath}" target="_blank">
@@ -242,22 +217,19 @@
 						</li>`;
 					});
 				}
-
 				html += '</ul>';
-
 				contentElement.innerHTML = html;
 			} catch (error) {
 				contentElement.innerHTML = `<div class="error"><i class="fas fa-exclamation-triangle"></i> 加载目录内容失败: ${error.message}</div>`;
 			}
 		}
-
 		// 初始化页面由外部JSON文件加载后调用
 		window.renderContent = renderContent;
 	});
 </script>
 <script>
 	// 从外部JSON文件加载仓库结构数据
-	fetch('./repo-structure.json')
+	fetch('./index-cache.json')
 		.then(response => response.json())
 		.then(repoStructure => {
 			window.repoStructure = repoStructure;

@@ -5,14 +5,12 @@
  */
 const fs = require('fs');
 const path = require('path');
-
 // 仓库根目录
 const REPO_ROOT = path.join(__dirname);
 // 要处理的目录列表
 const TARGET_DIRS = ['releases', 'plugins', 'snapshots'];
 // 输出的JSON文件名
-const OUTPUT_JSON_FILE = 'repo-structure.json';
-
+const OUTPUT_JSON_FILE = 'index-cache.json';
 /**
  * 递归扫描目录，��成目录结构数据
  * @param {string} dirPath 要扫描的目录路径
@@ -21,30 +19,22 @@ const OUTPUT_JSON_FILE = 'repo-structure.json';
  */
 function scanDirectory(dirPath, relativePath = '') {
 	const result = [];
-
 	try {
 		if (!fs.existsSync(dirPath)) {
 			console.warn(`Directory does not exist: ${dirPath}`);
 			return result;
 		}
-
 		const items = fs.readdirSync(dirPath);
-
 		for (const item of items) {
 			// 跳过隐藏文件和特定文件
-			if (item.startsWith('.') || item === 'index.html' || item === 'generate-repo-data.js' || item === 'node_modules' || item === '.github') {
-				continue;
-			}
-
+			if (item.startsWith('.') || item === 'index.html' || item === 'generate-repo-data.js' || item === 'node_modules' || item === '.github') continue;
 			const itemPath = path.join(dirPath, item);
 			const stats = fs.statSync(itemPath);
 			const isDirectory = stats.isDirectory();
-
 			// 如果是根目录，只添加指定的目标目录
 			if (relativePath === '' && !TARGET_DIRS.includes(item)) {
 				continue;
 			}
-
 			result.push({
 				name: item, isDirectory: isDirectory, lastModified: stats.mtime.toISOString()
 			});
@@ -52,10 +42,8 @@ function scanDirectory(dirPath, relativePath = '') {
 	} catch (error) {
 		console.error(`Error scanning directory ${dirPath}:`, error);
 	}
-
 	return result;
 }
-
 /**
  * 生成整个仓库的结构数据
  * @returns {Object} 仓库结构数据
@@ -63,36 +51,28 @@ function scanDirectory(dirPath, relativePath = '') {
 function generateRepositoryStructure() {
 	// 创建仓库结构对象
 	const repoStructure = {};
-
 	// 扫描根目录，只包含目标子目录
 	repoStructure[''] = scanDirectory(REPO_ROOT);
-
 	// 递归扫描子目录
 	function scanSubdirectories(dirPath, relativePath) {
 		try {
 			if (!fs.existsSync(dirPath)) {
 				return;
 			}
-
 			const items = fs.readdirSync(dirPath);
-
 			for (const item of items) {
 				// 跳过隐藏文件和特定文件
 				if (item.startsWith('.')) {
 					continue;
 				}
-
 				const itemPath = path.join(dirPath, item);
 				const stats = fs.statSync(itemPath);
-
 				if (stats.isDirectory()) {
 					const newRelativePath = relativePath ? `${relativePath}/${item}` : item;
-
 					// 只递归扫描目标目录或其子目录
 					const shouldScan = TARGET_DIRS.some(targetDir => {
 						return newRelativePath === targetDir || newRelativePath.startsWith(`${targetDir}/`);
 					});
-
 					if (shouldScan) {
 						repoStructure[newRelativePath] = scanDirectory(itemPath, newRelativePath);
 						scanSubdirectories(itemPath, newRelativePath);
@@ -103,16 +83,12 @@ function generateRepositoryStructure() {
 			console.error(`Error scanning subdirectories at ${dirPath}:`, error);
 		}
 	}
-
 	// 开始递归扫描
 	scanSubdirectories(REPO_ROOT, '');
-
 	// 打印结构数据以便调试
 	console.log('仓库结构键：', Object.keys(repoStructure));
-
 	return repoStructure;
 }
-
 /**
  * 将仓库结构数据保存到JSON文件中
  * @param {Object} repoStructure 仓库结构数据
@@ -122,7 +98,6 @@ function saveStructureToFile(repoStructure) {
 		// 转换为JSON字符串
 		const repoStructureJson = JSON.stringify(repoStructure, null, 2);
 		const outputPath = path.join(__dirname, OUTPUT_JSON_FILE);
-
 		// 写入到文件
 		fs.writeFileSync(outputPath, repoStructureJson);
 		console.log(`Repository structure data has been saved to ${outputPath}`);
@@ -130,60 +105,7 @@ function saveStructureToFile(repoStructure) {
 		console.error(`Error saving structure to file:`, error);
 	}
 }
-
-/**
- * 更新HTML文件中的脚本引用
- * @param {string} htmlFilePath HTML文件路径
- */
-function updateHtmlScriptReference(htmlFilePath) {
-	try {
-		let htmlContent = fs.readFileSync(htmlFilePath, 'utf8');
-
-		// 如果有旧的内嵌数据，则替换为引用外部文件的脚本
-		if (htmlContent.includes('id="repo-structure-data"')) {
-			htmlContent = htmlContent.replace(/<script id="repo-structure-data"[^>]*>[\s\S]*?<\/script>/, `<script>
-	// 从外部JSON文件加载仓库结构数据
-	fetch('./${OUTPUT_JSON_FILE}')
-		.then(response => response.json())
-		.then(repoStructure => {
-			window.repoStructure = repoStructure;
-			// 初始化页面
-			renderContent();
-		})
-		.catch(error => {
-			document.getElementById('content').innerHTML = 
-				\`<div class="error"><i class="fas fa-exclamation-triangle"></i> 加载仓库数据失败: \${error.message}</div>\`;
-		});
-</script>`);
-		} else {
-			// 如果没有找到旧的脚本标签，在</body>前添加新的脚本引用
-			const scriptTag = `<script>
-	// 从外部JSON文件加载仓库结构数据
-	fetch('./${OUTPUT_JSON_FILE}')
-		.then(response => response.json())
-		.then(repoStructure => {
-			window.repoStructure = repoStructure;
-			// 初始化页面
-			renderContent();
-		})
-		.catch(error => {
-			document.getElementById('content').innerHTML = 
-				\`<div class="error"><i class="fas fa-exclamation-triangle"></i> 加载仓库数据失败: \${error.message}</div>\`;
-		});
-</script>
-`;
-			htmlContent = htmlContent.replace('</body>', scriptTag + '</body>');
-		}
-
-		fs.writeFileSync(htmlFilePath, htmlContent);
-		console.log(`HTML file ${htmlFilePath} has been updated to reference external JSON data`);
-	} catch (error) {
-		console.error(`Error updating HTML script reference:`, error);
-	}
-}
-
 // 执行生成过程
 const repoStructure = generateRepositoryStructure();
 saveStructureToFile(repoStructure);
-updateHtmlScriptReference(path.join(__dirname, 'index.html'));
 console.log('Repository structure data generation completed!');
