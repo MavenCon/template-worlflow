@@ -46,7 +46,7 @@
             --breadcrumb-bg: #1e1e1e;
         }
 
-        /* 禁��初始加载时的过渡动画 */
+        /* 禁用初始加载时的过渡动画 */
         .theme-transition-disabled,
         .theme-transition-disabled * {
             transition: none !important;
@@ -164,7 +164,7 @@
             height: 2em;
         }
 
-        /* 暗色模式开关样��� */
+        /* 暗色模式开关样式 */
         .theme-switch-wrapper {
             position: fixed;
             top: 20px;
@@ -211,6 +211,10 @@
             transition: .4s;
             border-radius: 50%;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         input:checked + .slider {
@@ -221,10 +225,44 @@
             transform: translateX(26px);
         }
 
+        /* 主题图标样式 */
         .theme-icon {
-            margin: 0 8px;
-            height: 24px;
-            width: 24px;
+            height: 16px;
+            width: 16px;
+            z-index: 2;
+            position: absolute;
+            top: 9px;
+            transition: opacity 0.3s, transform 0.4s;
+        }
+
+        /* 太阳图标总是定位在左侧滑块位置 */
+        .sun-icon {
+            left: 9px;
+            color: #555;
+        }
+
+        /* 月亮图标总是定位在右侧滑块位置 */
+        .moon-icon {
+            left: 35px; /* 这个值等于 左侧padding(4px) + 滑块宽度(26px) + 偏移量(5px) */
+            color: #1e3a8a; /* 深蓝色，与白色滑块形成更好的对比 */
+        }
+
+        /* 亮色模式下显示太阳图标，隐藏月亮图标 */
+        input:not(:checked) + .slider .sun-icon {
+            opacity: 1;
+        }
+
+        input:not(:checked) + .slider .moon-icon {
+            opacity: 0;
+        }
+
+        /* 暗色模式下显示月亮图标，隐藏太阳图标 */
+        input:checked + .slider .sun-icon {
+            opacity: 0;
+        }
+
+        input:checked + .slider .moon-icon {
+            opacity: 1;
         }
 
         @media (max-width: 600px) {
@@ -311,16 +349,17 @@
 <body>
 <!-- 添加暗色模式开关 -->
 <div class="theme-switch-wrapper">
-	<svg class="svg-icon theme-icon">
-		<use xlink:href="#icon-sun"></use>
-	</svg>
 	<label class="theme-switch">
 		<input type="checkbox" id="theme-toggle">
-		<span class="slider"></span>
+		<span class="slider">
+			<svg class="svg-icon theme-icon sun-icon">
+				<use xlink:href="#icon-sun"></use>
+			</svg>
+			<svg class="svg-icon theme-icon moon-icon">
+				<use xlink:href="#icon-moon"></use>
+			</svg>
+		</span>
 	</label>
-	<svg class="svg-icon theme-icon">
-		<use xlink:href="#icon-moon"></use>
-	</svg>
 </div>
 <h1>
 	<svg class="svg-icon">
@@ -456,7 +495,7 @@
 			// 检查目录是否为空（不包括".."项）
 			if (files.length === 0) html += '<li><svg class="svg-icon"><use xlink:href="#icon-info-circle"></use></svg> 此目录为空</li>';
 			else {
-				// 首先显��目录
+				// 首先显示根目录
 				const folders = files.filter(f => f.isDirectory);
 				folders.forEach(folder => {
 					const folderPath = currentDir ? currentDir + '/' + folder.name : folder.name;
@@ -489,7 +528,7 @@
 		// 初始化页面由外部JSON文件加载后调用
 		window.renderContent = renderContent;
 	});
-	// 从外��JSON文件加载仓库结构数据
+	// 从JSON文件加载仓库结构数据
 	fetch('./index-cache.json')
 		.then(response => response.json())
 		.then(repoStructure => {
