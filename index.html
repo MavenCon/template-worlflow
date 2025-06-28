@@ -3,249 +3,211 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Maven 仓库浏览器</title>
+	<title>Maven 仓库索引</title>
+	<style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1, h2, h3 {
+            color: #0366d6;
+        }
+
+        a {
+            color: #0366d6;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .breadcrumb {
+            margin-bottom: 20px;
+            padding: 8px 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+
+        .file-list {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .file-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .file-date {
+            color: #666;
+            font-size: 0.85em;
+            margin-left: 10px;
+        }
+
+        .back-link {
+            margin-bottom: 15px;
+            display: inline-block;
+        }
+	</style>
 </head>
 <body>
-<h1>Maven 仓库浏览器</h1>
-<div id="breadcrumb" class="breadcrumb">
-	<!-- 面包屑导航将由JavaScript动态生成 -->
-</div>
+<h1>Maven 仓库索引</h1>
 <div id="content">
-	<div class="loading">加载中...</div>
+	<!-- 内容将通过 JavaScript 动态生成 -->
+	正在加载...
 </div>
 
 <script>
-	// 全局变量，存储当前路径
-	let currentPath = '';
+	document.addEventListener('DOMContentLoaded', function () {
+		// 获取当前URL路径
+		const currentPath = window.location.pathname;
+		const baseUrl = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
 
-	// 页面加载完成后执行
-	window.onload = function () {
-		// 获取并处理URL中的路径参数
-		const urlParams = new URLSearchParams(window.location.search);
-		const path = urlParams.get('path') || '';
-		navigate(path);
-
-		// 添加浏览器历史导航支持
-		window.onpopstate = function (event) {
-			if (event.state && event.state.path !== undefined) {
-				navigateWithoutHistory(event.state.path);
-			} else {
-				navigateWithoutHistory('');
-			}
-		};
-	};
-
-	// 导航到指定路径 - 添加到浏览器历史
-	function navigate(path) {
-		// 规范化路径格式
-		path = normalizePath(path);
-		history.pushState({path: path}, '', path ? `?path=${encodeURIComponent(path)}` : '');
-		navigateWithoutHistory(path);
-	}
-
-	// 不修改浏览历史的导航函数
-	function navigateWithoutHistory(path) {
-		// 规范化路径格式
-		path = normalizePath(path);
-		currentPath = path;
-		updateBreadcrumbs();
-		listDirectory(path);
-	}
-
-	// 规范化路径格式，确保路径格式一致
-	function normalizePath(path) {
-		// 移除开头和结尾的斜杠
-		path = path.replace(/^\/+|\/+$/g, '');
-		// 统一处理多个连续斜杠为单个斜杠
-		path = path.replace(/\/+/g, '/');
-		return path;
-	}
-
-	// 构建完整URL路径
-	function buildUrl(path) {
-		return path ? path + '/' : '';
-	}
-
-	// 更新面包屑导航
-	function updateBreadcrumbs() {
-		const breadcrumb = document.getElementById('breadcrumb');
-		// 清空当前面包屑
-		breadcrumb.innerHTML = '<a href="#" onclick="navigate(\'\'); return false;">根目录</a>';
-
-		// 如果当前不是根目录，则显示路径
-		if (currentPath) {
-			const parts = currentPath.split('/');
-			let cumulativePath = '';
-
-			for (let i = 0; i < parts.length; i++) {
-				if (parts[i]) {
-					cumulativePath += (cumulativePath ? '/' : '') + parts[i];
-					breadcrumb.innerHTML += ' / <a href="#" onclick="navigate(\'' + cumulativePath + '\'); return false;">' + parts[i] + '</a>';
-				}
+		// 确定当前目录
+		let currentDir = '';
+		if (currentPath.includes('snapshots/')) {
+			currentDir = currentPath.substring(currentPath.indexOf('snapshots/') + 'snapshots/'.length);
+			if (currentDir.endsWith('/')) {
+				currentDir = currentDir.slice(0, -1);
 			}
 		}
-	}
 
-	// 列出目录内容
-	function listDirectory(path) {
-		const contentDiv = document.getElementById('content');
-		contentDiv.innerHTML = '<div class="loading">加载中...</div>';
-
-		// 构建基于相对路径的URL
-		const baseUrl = buildUrl(path);
-
-		// 使用fetch API获取目录列表
-		fetch(baseUrl)
-			.then(response => {
+		// 异步加载目录内容
+		async function loadDirectoryContents(dirPath = '') {
+			try {
+				// 通过AJAX请求获取目录内容
+				const response = await fetch(`/api/list?path=${encodeURIComponent(dirPath)}`);
 				if (!response.ok) {
-					throw new Error(`HTTP error! Status: ${response.status}`);
+					throw new Error(`Failed to load directory: ${response.statusText}`);
 				}
-				return response.text();
-			})
-			.then(html => {
-				// 解析HTML来提取目录和文件
-				const parser = new DOMParser();
-				const doc = parser.parseFromString(html, 'text/html');
-				const links = Array.from(doc.querySelectorAll('a'));
 
-				console.log("Found links:", links.length);
+				const data = await response.json();
+				return data.files || [];
+			} catch (error) {
+				console.error('Error loading directory contents:', error);
 
-				// 过滤目录链接
-				const items = links.filter(a => {
-					const href = a.getAttribute('href');
-					// 输出调试信息
-					console.log("Link:", href, a.textContent);
+				// 如果API不可用，回退到直接扫描当前页面所在目录
+				return scanDirectoryFromDOM();
+			}
+		}
 
-					// 排除不是文件或目录的链接
-					if (!href || href === './' || href === 'index.html' ||
-					    href.startsWith('?') || href.startsWith('http')) {
-						return false;
-					}
+		// 从DOM中扫描当前目录内容（在没有后端API的情况下使用）
+		function scanDirectoryFromDOM() {
+			// 这���函数会扫描当前页面所处的目录，并返回文件列表
+			// 由于这是一个静态HTML页面，我们需要服务器提前生成包含目录内容的数据
+			// 这里我们将尝试从页面中的一个隐藏元素获取数据
 
-					// 如果是根目录，则排除上级目录链接
-					return !(href === '../' && !currentPath);
+			const dirDataElement = document.getElementById('directory-data');
+			if (dirDataElement) {
+				try {
+					return JSON.parse(dirDataElement.textContent);
+				} catch (e) {
+					console.error('Failed to parse directory data:', e);
+				}
+			}
 
+			// 如果无法获取数据，则返回一个空数组
+			return [];
+		}
 
-				});
+		// 生成面包屑导航
+		function generateBreadcrumb(path) {
+			if (!path) return '<div class="breadcrumb">首页</div>';
 
-				console.log("Filtered items:", items.length);
+			const parts = path.split('/');
+			let breadcrumb = '<div class="breadcrumb">';
+			breadcrumb += '<a href="' + baseUrl + '">首页</a>';
 
-				// 创建统一的数据结构
-				const fileList = [];
+			let currentPath = '';
+			for (const part of parts) {
+				if (!part) continue;
+				currentPath += part + '/';
+				breadcrumb += ' &gt; <a href="' + baseUrl + 'snapshots/' + currentPath + '">' + part + '</a>';
+			}
 
-				// 如果不是根目录，添加返回上级目录选项
-				if (currentPath) {
-					// 计算上一级目录的路径
-					const parentPath = currentPath.includes('/')
-						? currentPath.substring(0, currentPath.lastIndexOf('/'))
-						: '';
+			breadcrumb += '</div>';
+			return breadcrumb;
+		}
 
-					fileList.push({
-						name: '..',
-						isFolder: true,
-						href: '../',
-						isParent: true,
-						parentPath: parentPath // 存储父目录路径，避免重复计算
+		// 生成内容HTML
+		async function renderContent() {
+			const contentElement = document.getElementById('content');
+
+			try {
+				const files = await loadDirectoryContents(currentDir ? `snapshots/${currentDir}` : 'snapshots');
+
+				let html = '';
+
+				// 添加标题
+				html += '<h2>' + (currentDir || '仓库根目录') + '</h2>';
+
+				// 添加面包屑导航
+				html += generateBreadcrumb(currentDir);
+
+				// 添加返回上层的链接
+				if (currentDir) {
+					const parentDir = currentDir.includes('/') ?
+						currentDir.substring(0, currentDir.lastIndexOf('/')) :
+						'';
+					html += '<a href="' + baseUrl + (parentDir ? 'snapshots/' + parentDir + '/' : '') + '" class="back-link">⬅️ 返回上层</a>';
+				}
+
+				// 列出文件和目录
+				html += '<ul class="file-list">';
+
+				if (files.length === 0) {
+					html += '<li>此目录为空</li>';
+				} else {
+					// 首先显示目��
+					const folders = files.filter(f => f.isDirectory);
+					folders.forEach(folder => {
+						const folderPath = currentDir ? currentDir + '/' + folder.name : folder.name;
+						html += `<li class="folder">
+                                <a href="${baseUrl}snapshots/${folderPath}/">${folder.name}</a>
+                            </li>`;
+					});
+
+					// 然后显示文件
+					const onlyFiles = files.filter(f => !f.isDirectory);
+					onlyFiles.forEach(file => {
+						const filePath = currentDir ? 'snapshots/' + currentDir + '/' + file.name : 'snapshots/' + file.name;
+						const formattedDate = new Date(file.lastModified).toLocaleString();
+						html += `<li class="file">
+                                <a href="${baseUrl}${filePath}">${file.name}</a>
+                                <span class="file-date">${formattedDate}</span>
+                            </li>`;
 					});
 				}
 
-				// 处理当前目录的内容
-				items.forEach(a => {
-					const href = a.getAttribute('href');
-					// 忽略父目录链接，因为我们已经手动添加了
-					if (href !== '../') {
-						// 移除尾部斜杠来获取准确名称
-						const name = a.textContent.trim().replace(/\/$/, '');
-						const isFolder = href.endsWith('/');
+				html += '</ul>';
 
-						fileList.push({
-							name: name || href.replace(/\/$/, ''), // 使用href作为备用名称
-							isFolder: isFolder,
-							href: href,
-							isParent: false
-						});
-					}
-				});
+				contentElement.innerHTML = html;
+			} catch (error) {
+				contentElement.innerHTML = `<div class="error">加载目录内容失败: ${error.message}</div>`;
+			}
+		}
 
-				console.log("Final file list:", fileList);
+		// 初始化页面
+		renderContent();
+	});
+</script>
 
-				if (fileList.length === 0) {
-					contentDiv.innerHTML = '<p>此目录为空或无法访问。</p>';
-					return;
-				}
-
-				// 排序：父目录始终在最上方，然后是文件夹，然后是文件，都按字母顺序排序
-				fileList.sort((a, b) => {
-					// 父目录优先
-					if (a.isParent) return -1;
-					if (b.isParent) return 1;
-
-					// 文件夹优先于文件
-					if (a.isFolder && !b.isFolder) return -1;
-					if (!a.isFolder && b.isFolder) return 1;
-
-					// 相同类型按名称字母顺序排序
-					return a.name.localeCompare(b.name);
-				});
-
-				// 创建表格来显示内容
-				let tableHTML = `
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>名称</th>
-                                <th>最后修改时间</th>
-                                <th>大小</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                `;
-
-				// 统一处理所有条目
-				fileList.forEach(item => {
-					if (item.isFolder) {
-						if (item.isParent) {
-							// 处理返回上级目录，使用已存储的 parentPath
-							tableHTML += `
-                                <tr>
-                                    <td><a href="#" class="folder" onclick="navigate('${item.parentPath}'); return false;">返回上级目录</a></td>
-                                    <td>-</td>
-                                    <td>-</td>
-                                </tr>
-                            `;
-						} else {
-							// 处理普通文件夹
-							const itemPath = currentPath
-								? `${currentPath}/${item.name}`
-								: item.name;
-
-							tableHTML += `
-                                <tr>
-                                    <td><a href="#" class="folder" onclick="navigate('${itemPath}'); return false;">${item.name}</a></td>
-                                    <td>-</td>
-                                    <td>-</td>
-                                </tr>
-                            `;
-						}
-					} else {
-						// 处理文件
-						tableHTML += `
-                            <tr>
-                                <td><a href="${baseUrl}${item.href}" class="file" target="_blank">${item.name}</a></td>
-                                <td>-</td>
-                                <td>-</td>
-                            </tr>
-                        `;
-					}
-				});
-
-				tableHTML += '</tbody></table>';
-				contentDiv.innerHTML = tableHTML;
-			})
-			.catch(error => {
-				contentDiv.innerHTML = `<p>加载错误: ${error.message}</p><p>请确保服务器已启动并支持目录浏览。</p>`;
-				console.error("Fetch error:", error);
-			});
+<!-- 这个隐藏元素用于在没有后端API的情况下提供目录数据 -->
+<script id="directory-data" type="application/json">
+	{
+		"files": [
+			{
+				"name": "org",
+				"isDirectory": true,
+				"lastModified": "2025-06-28T00:00:00.000Z"
+			}
+		]
 	}
 </script>
 </body>
