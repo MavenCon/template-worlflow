@@ -36,7 +36,7 @@ jobs:
           mkdir -p ./plugins
           cp -r ./plugins ./build/pages/plugins
       - name: Execute Gradle build
-        run: ./gradlew init
+        run: ./gradlew build
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
