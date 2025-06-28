@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>${title}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            background: #f8f9fa;
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .timestamp {
+            color: #7f8c8d;
+            font-size: 0.8em;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>${title}</h1>
+
+    <h2>项目列表：</h2>
+    <ul>
+        <#list links as link>
+            <li>
+                <a href="${link.url}">${link.title}</a>
+            </li>
+        </#list>
+        <#list downloads as download>
+            <li>
+                <a href="${download.url}" download="${download.name}">${download.title}</a>
+            </li>
+        </#list>
+    </ul>
+</body>
