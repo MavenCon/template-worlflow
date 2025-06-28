@@ -73,6 +73,7 @@ fun forEachFile(f: File, o: File) {
     }
     tMap["links"] = links
     tMap["downloads"] = downloads
+    tMap["title"] = name
 
     val out = outputDir.resolve(o.name)
     out.mkdirs()
