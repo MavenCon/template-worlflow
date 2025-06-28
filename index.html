@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Maven 仓库浏览器</title>
+	<style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            border-bottom: 1px solid #eaecef;
+            padding-bottom: 0.3em;
+        }
+
+        .breadcrumb {
+            margin-bottom: 20px;
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        .breadcrumb a {
+            text-decoration: none;
+            color: #0366d6;
+            margin: 0 5px;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 8px;
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dfe2e5;
+        }
+
+        td {
+            padding: 8px;
+            border-bottom: 1px solid #dfe2e5;
+        }
+
+        tr:hover {
+            background-color: #f6f8fa;
+        }
+
+        .folder {
+            font-weight: bold;
+            color: #0366d6;
+        }
+
+        .file {
+            color: #24292e;
+        }
+
+        .folder:before {
+            content: "📁 ";
+        }
+
+        .file:before {
+            content: "📄 ";
+        }
+
+        .loading {
+            text-align: center;
+            font-size: 1.2em;
+            margin: 40px;
+        }
+	</style>
+</head>
+<body>
+<h1>Maven 仓库浏览器</h1>
+<div id="breadcrumb" class="breadcrumb">
+	<a href="#" onclick="navigate('')">首页</a>
+</div>
+<div id="content">
+	<div class="loading">加载中...</div>
+</div>
+
+<script>
+	let currentPath = '';
+
+	// 页面加载完成后执行
+	window.onload = function () {
+		// 获取并处理URL中的路径参数
+		const urlParams = new URLSearchParams(window.location.search);
+		const path = urlParams.get('path') || '';
+		navigate(path);
+
+		// 添加浏览器历史导航支持
+		window.onpopstate = function (event) {
+			if (event.state && event.state.path !== undefined) {
+				navigateWithoutHistory(event.state.path);
+			} else {
+				navigateWithoutHistory('');
+			}
+		};
+	};
+
+	// 导航到指定路径
+	function navigate(path) {
+		history.pushState({path: path}, '', path ? `?path=${encodeURIComponent(path)}` : '');
+		navigateWithoutHistory(path);
+	}
+
+	// 不修改浏览历史的导航函数
+	function navigateWithoutHistory(path) {
+		currentPath = path;
+		updateBreadcrumbs();
+		listDirectory(path);
+	}
+
+	// 更新面包屑导航
+	function updateBreadcrumbs() {
+		const breadcrumb = document.getElementById('breadcrumb');
+		breadcrumb.innerHTML = '<a href="#" onclick="navigate(\'\'); return false;">首页</a>';
+
+		if (currentPath) {
+			const parts = currentPath.split('/');
+			let cumulativePath = '';
+
+			for (let i = 0; i < parts.length; i++) {
+				if (parts[i]) {
+					cumulativePath += (cumulativePath ? '/' : '') + parts[i];
+					breadcrumb.innerHTML += ' / <a href="#" onclick="navigate(\'' + cumulativePath + '\'); return false;">' + parts[i] + '</a>';
+				}
+			}
+		}
+	}
+
+	// 列出目录内容
+	function listDirectory(path) {
+		const contentDiv = document.getElementById('content');
+		contentDiv.innerHTML = '<div class="loading">加载中...</div>';
+
+		// 构建基于相对路径的URL
+		const baseUrl = path ? path + '/' : '';
+
+		// 使用fetch API获取目录列表
+		fetch(baseUrl)
+			.then(response => response.text())
+			.then(html => {
+				// 解析HTML来提取目录和文件
+				const parser = new DOMParser();
+				const doc = parser.parseFromString(html, 'text/html');
+				const links = Array.from(doc.querySelectorAll('a'));
+
+				// 过滤掉父目录链接和其他非文件/文件夹项
+				const items = links.filter(a => {
+					const href = a.getAttribute('href');
+					return href !== '../' && href !== './' && href !== 'index.html' && !href.startsWith('?') && !href.startsWith('http');
+				});
+
+				if (items.length === 0) {
+					contentDiv.innerHTML = '<p>此目录为空或无法访问。</p>';
+					return;
+				}
+
+				// 创建表格来显示内容
+				let tableHTML = `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>名称</th>
+                                    <th>最后修改时间</th>
+                                    <th>大小</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+
+				// 先处理文件夹
+				const folders = items.filter(a => a.getAttribute('href').endsWith('/'));
+				folders.forEach(a => {
+					const name = a.textContent.replace('/', '');
+					tableHTML += `
+                            <tr>
+                                <td><a href="#" class="folder" onclick="navigate('${currentPath ? currentPath + '/' : ''}${name}'); return false;">${name}</a></td>
+                                <td>-</td>
+                                <td>-</td>
+                            </tr>
+                        `;
+				});
+
+				// 再处理文件
+				const files = items.filter(a => !a.getAttribute('href').endsWith('/'));
+				files.forEach(a => {
+					const name = a.textContent;
+					const href = a.getAttribute('href');
+					tableHTML += `
+                            <tr>
+                                <td><a href="${baseUrl}${href}" class="file" target="_blank">${name}</a></td>
+                                <td>-</td>
+                                <td>-</td>
+                            </tr>
+                        `;
+				});
+
+				tableHTML += '</tbody></table>';
+				contentDiv.innerHTML = tableHTML;
+			})
+			.catch(error => {
+				contentDiv.innerHTML = `<p>加载错误: ${error.message}</p>`;
+			});
+	}
+</script>
+</body>
+</html>
