@@ -59,15 +59,6 @@ jobs:
           else
             echo "directory already exists"
           fi
-          
-      - name: Copy dir to build pages
-        run: |
-          echo "Copy dir to build/pages"   
-          cp -r releases build/pages/ 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: './build/pages/plugins'
       - name: Verify copy
         run: |
           echo "Directory structure:"
@@ -80,6 +71,14 @@ jobs:
           ls -l snapshots/
           echo "Plugins directory content:"
           ls -l plugins/
+      - name: Copy dir to build pages
+        run: |
+          echo "Copy dir to build/pages"   
+          cp -r releases build/pages/ 
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './build/pages/plugins'
   deploy:
     environment:
       name: github-pages
