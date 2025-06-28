@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Maven 仓库索引</title>
+	<title>Maven Index</title>
 	<!--suppress CssUnusedSymbol -->
 	<style>
         body {
@@ -173,7 +173,7 @@
 	<svg class="svg-icon">
 		<use xlink:href="#icon-box-archive"></use>
 	</svg>
-	Maven 仓库索引
+	Maven Index
 </h1>
 <div id="content">
 	<!-- 内容将通过 JavaScript 动态生成 -->
@@ -189,17 +189,12 @@
 		// 获取当前URL及参数
 		const urlParams = new URLSearchParams(window.location.search);
 		const baseUrl = window.location.href.split('?')[0];
-		// 从URL参数�����取当前目录，如果没有则使用根目录
+		// 从URL参数获取当前目录，如果没有则使用根目录
 		let currentDir = urlParams.get('path') || '';
 		// 异步加载目录内容
 		async function loadDirectoryContents(dirPath = '') {
-			try {
-				// 从动态生成的仓库结构数据中读取内容
-				return scanDirectoryFromData(dirPath);
-			} catch (error) {
-				console.error('Error loading directory contents:', error);
-				return [];
-			}
+			// 从动态生成的仓库结构数据中读取内容
+			return scanDirectoryFromData(dirPath);
 		}
 		// 从数据中获取目录内容
 		function scanDirectoryFromData(dirPath) {
@@ -208,15 +203,9 @@
 				console.log('仓库结构数据:', window.repoStructure);
 				console.log('请求路径:', dirPath);
 				// 如果当前路径存在于结构数据中，返回其内容
-				if (dirPath in window.repoStructure) {
-					console.log('找到路径，内��:', window.repoStructure[dirPath]);
-					return window.repoStructure[dirPath];
-				} else {
-					console.log('路径不存在于仓库结构中');
-				}
-			} else {
-				console.error('仓库结构数据尚未加载');
-			}
+				if (dirPath in window.repoStructure) return window.repoStructure[dirPath];
+				else console.log('路径不存在于仓库结构中');
+			} else console.error('仓库结构数据尚未加载');
 			// 如果无法获取数据，则返回空数组
 			return [];
 		}
@@ -236,10 +225,10 @@
 		}
 		// 生成可点击的路径标题
 		function generateClickablePath(path) {
-			if (!path) return '<h2><svg class="svg-icon"><use xlink:href="#icon-folder-open"></use></svg> 仓库根目录</h2>';
+			if (!path) return '<h2><svg class="svg-icon"><use xlink:href="#icon-folder-open"></use></svg> 根目录</h2>';
 			const parts = path.split('/');
 			let html = '<h2><svg class="svg-icon"><use xlink:href="#icon-folder-open"></use></svg> ';
-			html += `<a href="${baseUrl}">首页</a>`;
+			html += `<a href="${baseUrl}">根目录</a>`;
 			let currentPath = '';
 			for (const part of parts) {
 				if (!part) continue;
@@ -253,7 +242,7 @@
 		async function renderContent() {
 			const contentElement = document.getElementById('content');
 			try {
-				// ��载当前目录的内容
+				// 加载当前目录的内容
 				const files = await loadDirectoryContents(currentDir);
 				let html = '';
 				// 添加可点击的路径标题
@@ -273,9 +262,8 @@
 					</li>`;
 				}
 				// 检查目录是否为空（不包括".."项）
-				if (files.length === 0) {
-					html += '<li><svg class="svg-icon"><use xlink:href="#icon-info-circle"></use></svg> 此目录为空</li>';
-				} else {
+				if (files.length === 0) html += '<li><svg class="svg-icon"><use xlink:href="#icon-info-circle"></use></svg> 此目录为空</li>';
+				else {
 					// 首先显示目录
 					const folders = files.filter(f => f.isDirectory);
 					folders.forEach(folder => {

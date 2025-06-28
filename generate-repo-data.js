@@ -12,7 +12,7 @@ const TARGET_DIRS = ['releases', 'plugins', 'snapshots'];
 // 输出的JSON文件名
 const OUTPUT_JSON_FILE = 'index-cache.json';
 /**
- * 递归扫描目录，��成目录结构数据
+ * 递归扫描目录，生成目录结构数据
  * @param {string} dirPath 要扫描的目录路径
  * @param {string} relativePath 相对于仓库根目录的路径
  * @returns {Array} 目录内容的数组
