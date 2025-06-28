@@ -4,6 +4,7 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Maven 仓库索引</title>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 	<!--suppress CssUnusedSymbol -->
 	<style>
         body {
@@ -43,14 +44,31 @@
         .file-list li {
             padding: 8px 0;
             border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
         }
 
-        .file-list .folder:before {
-            content: "📁 ";
+        .file-icon {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+            color: #444;
         }
 
-        .file-list .file:before {
-            content: "📄 ";
+        .folder-icon {
+            color: #ffc107;
+        }
+
+        .file-icon.xml {
+            color: #ff5722;
+        }
+
+        .file-icon.pom {
+            color: #2196f3;
+        }
+
+        .file-icon.md5, .file-icon.sha1, .file-icon.sha256, .file-icon.sha512 {
+            color: #9e9e9e;
         }
 
         .file-date {
@@ -61,15 +79,24 @@
 
         .back-link {
             margin-bottom: 15px;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .file-name {
+            flex-grow: 1;
         }
 	</style>
 </head>
 <body>
-<h1>Maven 仓库索引</h1>
+<h1><i class="fas fa-box-archive"></i> Maven 仓库索引</h1>
 <div id="content">
 	<!-- 内容将通过 JavaScript 动态生成 -->
-	正在加载...
+	<div style="text-align: center; padding: 20px;">
+		<i class="fas fa-spinner fa-pulse fa-2x"></i>
+		<p>正在加载...</p>
+	</div>
 </div>
 
 <script>
@@ -94,41 +121,41 @@
 
 		// 从静态数据中获取目录内容
 		function scanDirectoryFromStaticData(dirPath) {
-			// 存储库结构的静态数据
+			// 存储��结构的静态数据
 			const repoStructure = {
 				'': [
-					{name: 'org', isDirectory: true, lastModified: new Date().toISOString()}
+					{ name: 'org', isDirectory: true, lastModified: new Date().toISOString() }
 				],
 				'org': [
-					{name: 'test', isDirectory: true, lastModified: new Date().toISOString()}
+					{ name: 'test', isDirectory: true, lastModified: new Date().toISOString() }
 				],
 				'org/test': [
-					{name: 'testMavenCon', isDirectory: true, lastModified: new Date().toISOString()}
+					{ name: 'testMavenCon', isDirectory: true, lastModified: new Date().toISOString() }
 				],
 				'org/test/testMavenCon': [
-					{name: 'maven-metadata.xml', isDirectory: false, lastModified: new Date().toISOString()},
-					{name: 'maven-metadata.xml.md5', isDirectory: false, lastModified: new Date().toISOString()},
-					{name: 'maven-metadata.xml.sha1', isDirectory: false, lastModified: new Date().toISOString()},
-					{name: 'maven-metadata.xml.sha256', isDirectory: false, lastModified: new Date().toISOString()},
-					{name: 'maven-metadata.xml.sha512', isDirectory: false, lastModified: new Date().toISOString()},
-					{name: '1.0-SNAPSHOT', isDirectory: true, lastModified: new Date().toISOString()}
+					{ name: 'maven-metadata.xml', isDirectory: false, lastModified: new Date().toISOString() },
+					{ name: 'maven-metadata.xml.md5', isDirectory: false, lastModified: new Date().toISOString() },
+					{ name: 'maven-metadata.xml.sha1', isDirectory: false, lastModified: new Date().toISOString() },
+					{ name: 'maven-metadata.xml.sha256', isDirectory: false, lastModified: new Date().toISOString() },
+					{ name: 'maven-metadata.xml.sha512', isDirectory: false, lastModified: new Date().toISOString() },
+					{ name: '1.0-SNAPSHOT', isDirectory: true, lastModified: new Date().toISOString() }
 				],
 				'org/test/testMavenCon/1.0-SNAPSHOT': [
-					{name: 'maven-metadata.xml', isDirectory: false, lastModified: new Date().toISOString()},
-					{name: 'maven-metadata.xml.md5', isDirectory: false, lastModified: new Date().toISOString()},
-					{name: 'maven-metadata.xml.sha1', isDirectory: false, lastModified: new Date().toISOString()},
-					{name: 'maven-metadata.xml.sha256', isDirectory: false, lastModified: new Date().toISOString()},
-					{name: 'maven-metadata.xml.sha512', isDirectory: false, lastModified: new Date().toISOString()},
-					{name: 'testMavenCon-1.0-20250627.122334-1.pom', isDirectory: false, lastModified: new Date().toISOString()},
-					{name: 'testMavenCon-1.0-20250627.122334-1.pom.md5', isDirectory: false, lastModified: new Date().toISOString()},
-					{name: 'testMavenCon-1.0-20250627.122334-1.pom.sha1', isDirectory: false, lastModified: new Date().toISOString()},
-					{name: 'testMavenCon-1.0-20250627.122334-1.pom.sha256', isDirectory: false, lastModified: new Date().toISOString()},
-					{name: 'testMavenCon-1.0-20250627.122334-1.pom.sha512', isDirectory: false, lastModified: new Date().toISOString()},
-					{name: 'testMavenCon-1.0-20250627.123247-2.pom', isDirectory: false, lastModified: new Date().toISOString()},
-					{name: 'testMavenCon-1.0-20250627.123247-2.pom.md5', isDirectory: false, lastModified: new Date().toISOString()},
-					{name: 'testMavenCon-1.0-20250627.123247-2.pom.sha1', isDirectory: false, lastModified: new Date().toISOString()},
-					{name: 'testMavenCon-1.0-20250627.123247-2.pom.sha256', isDirectory: false, lastModified: new Date().toISOString()},
-					{name: 'testMavenCon-1.0-20250627.123247-2.pom.sha512', isDirectory: false, lastModified: new Date().toISOString()}
+					{ name: 'maven-metadata.xml', isDirectory: false, lastModified: new Date().toISOString() },
+					{ name: 'maven-metadata.xml.md5', isDirectory: false, lastModified: new Date().toISOString() },
+					{ name: 'maven-metadata.xml.sha1', isDirectory: false, lastModified: new Date().toISOString() },
+					{ name: 'maven-metadata.xml.sha256', isDirectory: false, lastModified: new Date().toISOString() },
+					{ name: 'maven-metadata.xml.sha512', isDirectory: false, lastModified: new Date().toISOString() },
+					{ name: 'testMavenCon-1.0-20250627.122334-1.pom', isDirectory: false, lastModified: new Date().toISOString() },
+					{ name: 'testMavenCon-1.0-20250627.122334-1.pom.md5', isDirectory: false, lastModified: new Date().toISOString() },
+					{ name: 'testMavenCon-1.0-20250627.122334-1.pom.sha1', isDirectory: false, lastModified: new Date().toISOString() },
+					{ name: 'testMavenCon-1.0-20250627.122334-1.pom.sha256', isDirectory: false, lastModified: new Date().toISOString() },
+					{ name: 'testMavenCon-1.0-20250627.122334-1.pom.sha512', isDirectory: false, lastModified: new Date().toISOString() },
+					{ name: 'testMavenCon-1.0-20250627.123247-2.pom', isDirectory: false, lastModified: new Date().toISOString() },
+					{ name: 'testMavenCon-1.0-20250627.123247-2.pom.md5', isDirectory: false, lastModified: new Date().toISOString() },
+					{ name: 'testMavenCon-1.0-20250627.123247-2.pom.sha1', isDirectory: false, lastModified: new Date().toISOString() },
+					{ name: 'testMavenCon-1.0-20250627.123247-2.pom.sha256', isDirectory: false, lastModified: new Date().toISOString() },
+					{ name: 'testMavenCon-1.0-20250627.123247-2.pom.sha512', isDirectory: false, lastModified: new Date().toISOString() }
 				]
 			};
 
@@ -141,13 +168,28 @@
 			return [];
 		}
 
+		// 获取文件类型对应的图标
+		function getFileIcon(fileName) {
+			if (fileName.endsWith('.xml')) {
+				return '<i class="fas fa-file-code file-icon xml"></i>';
+			} else if (fileName.endsWith('.pom')) {
+				return '<i class="fas fa-file-alt file-icon pom"></i>';
+			} else if (fileName.endsWith('.md5')) {
+				return '<i class="fas fa-fingerprint file-icon md5"></i>';
+			} else if (fileName.endsWith('.sha1') || fileName.endsWith('.sha256') || fileName.endsWith('.sha512')) {
+				return '<i class="fas fa-shield-alt file-icon sha1"></i>';
+			} else {
+				return '<i class="fas fa-file file-icon"></i>';
+			}
+		}
+
 		// 生成面包屑导航
 		function generateBreadcrumb(path) {
-			if (!path) return '<div class="breadcrumb">首页</div>';
+			if (!path) return '<div class="breadcrumb"><i class="fas fa-home"></i> 首页</div>';
 
 			const parts = path.split('/');
 			let breadcrumb = '<div class="breadcrumb">';
-			breadcrumb += `<a href="${baseUrl}">首页</a>`;
+			breadcrumb += `<a href="${baseUrl}"><i class="fas fa-home"></i> 首页</a>`;
 
 			let currentPath = '';
 			for (const part of parts) {
@@ -171,7 +213,7 @@
 				let html = '';
 
 				// 添加标题
-				html += '<h2>' + (currentDir || '仓库根目录') + '</h2>';
+				html += '<h2><i class="fas fa-folder-open"></i> ' + (currentDir || '仓库根目录') + '</h2>';
 
 				// 添加面包屑导航
 				html += generateBreadcrumb(currentDir);
@@ -181,21 +223,22 @@
 					const parentDir = currentDir.includes('/') ?
 						currentDir.substring(0, currentDir.lastIndexOf('/')) :
 						'';
-					html += `<a href="${baseUrl}${parentDir ? '?path=' + encodeURIComponent(parentDir) : ''}" class="back-link">⬅️ 返回上层</a>`;
+					html += `<a href="${baseUrl}${parentDir ? '?path=' + encodeURIComponent(parentDir) : ''}" class="back-link"><i class="fas fa-arrow-left"></i> 返回上层</a>`;
 				}
 
 				// 列出文件和目录
 				html += '<ul class="file-list">';
 
 				if (files.length === 0) {
-					html += '<li>此目录为空</li>';
+					html += '<li><i class="fas fa-info-circle"></i> 此目录为空</li>';
 				} else {
 					// 首先显示目录
 					const folders = files.filter(f => f.isDirectory);
 					folders.forEach(folder => {
 						const folderPath = currentDir ? currentDir + '/' + folder.name : folder.name;
-						html += `<li class="folder">
-							<a href="${baseUrl}?path=${encodeURIComponent(folderPath)}">${folder.name}</a>
+						html += `<li>
+							<i class="fas fa-folder folder-icon file-icon"></i>
+							<div class="file-name"><a href="${baseUrl}?path=${encodeURIComponent(folderPath)}">${folder.name}</a></div>
 						</li>`;
 					});
 
@@ -204,9 +247,10 @@
 					onlyFiles.forEach(file => {
 						const filePath = currentDir ? 'snapshots/' + currentDir + '/' + file.name : 'snapshots/' + file.name;
 						const formattedDate = new Date(file.lastModified).toLocaleString();
-						html += `<li class="file">
-							<a href="${baseUrl}${filePath}" target="_blank">${file.name}</a>
-							<span class="file-date">${formattedDate}</span>
+						html += `<li>
+							${getFileIcon(file.name)}
+							<div class="file-name"><a href="${baseUrl}${filePath}" target="_blank">${file.name}</a></div>
+							<span class="file-date"><i class="far fa-clock"></i> ${formattedDate}</span>
 						</li>`;
 					});
 				}
@@ -215,7 +259,7 @@
 
 				contentElement.innerHTML = html;
 			} catch (error) {
-				contentElement.innerHTML = `<div class="error">加载目录内容失败: ${error.message}</div>`;
+				contentElement.innerHTML = `<div class="error"><i class="fas fa-exclamation-triangle"></i> 加载目录内容失败: ${error.message}</div>`;
 			}
 		}
 
