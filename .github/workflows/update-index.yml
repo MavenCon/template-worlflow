@@ -1,13 +1,16 @@
 name: Update Maven Repository Index
 
+permissions:
+  contents: write
+
 on:
   push:
-    branches: [ main, dev ]
+    branches: [ main ]
     paths:
-      - 'snapshots/**'
       - 'releases/**'
+      - 'snapshots/**'
       - 'plugins/**'
-  workflow_dispatch:  # 允许手动触发
+  workflow_dispatch:
 
 jobs:
   update-index:
