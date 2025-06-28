@@ -111,60 +111,39 @@
 		// 异步加载目录内容
 		async function loadDirectoryContents(dirPath = '') {
 			try {
-				// 假设是GitHub Pages无法提供后端API，直接使用静态数据
-				return scanDirectoryFromStaticData(dirPath);
+				// 从动态生成的仓库结构数据中读取内容
+				return scanDirectoryFromData(dirPath);
 			} catch (error) {
 				console.error('Error loading directory contents:', error);
 				return [];
 			}
 		}
 
-		// 从静态数据中获取目录内容
-		function scanDirectoryFromStaticData(dirPath) {
-			// 存储��结构的静态数据
-			const repoStructure = {
-				'': [
-					{ name: 'org', isDirectory: true, lastModified: new Date().toISOString() }
-				],
-				'org': [
-					{ name: 'test', isDirectory: true, lastModified: new Date().toISOString() }
-				],
-				'org/test': [
-					{ name: 'testMavenCon', isDirectory: true, lastModified: new Date().toISOString() }
-				],
-				'org/test/testMavenCon': [
-					{ name: 'maven-metadata.xml', isDirectory: false, lastModified: new Date().toISOString() },
-					{ name: 'maven-metadata.xml.md5', isDirectory: false, lastModified: new Date().toISOString() },
-					{ name: 'maven-metadata.xml.sha1', isDirectory: false, lastModified: new Date().toISOString() },
-					{ name: 'maven-metadata.xml.sha256', isDirectory: false, lastModified: new Date().toISOString() },
-					{ name: 'maven-metadata.xml.sha512', isDirectory: false, lastModified: new Date().toISOString() },
-					{ name: '1.0-SNAPSHOT', isDirectory: true, lastModified: new Date().toISOString() }
-				],
-				'org/test/testMavenCon/1.0-SNAPSHOT': [
-					{ name: 'maven-metadata.xml', isDirectory: false, lastModified: new Date().toISOString() },
-					{ name: 'maven-metadata.xml.md5', isDirectory: false, lastModified: new Date().toISOString() },
-					{ name: 'maven-metadata.xml.sha1', isDirectory: false, lastModified: new Date().toISOString() },
-					{ name: 'maven-metadata.xml.sha256', isDirectory: false, lastModified: new Date().toISOString() },
-					{ name: 'maven-metadata.xml.sha512', isDirectory: false, lastModified: new Date().toISOString() },
-					{ name: 'testMavenCon-1.0-20250627.122334-1.pom', isDirectory: false, lastModified: new Date().toISOString() },
-					{ name: 'testMavenCon-1.0-20250627.122334-1.pom.md5', isDirectory: false, lastModified: new Date().toISOString() },
-					{ name: 'testMavenCon-1.0-20250627.122334-1.pom.sha1', isDirectory: false, lastModified: new Date().toISOString() },
-					{ name: 'testMavenCon-1.0-20250627.122334-1.pom.sha256', isDirectory: false, lastModified: new Date().toISOString() },
-					{ name: 'testMavenCon-1.0-20250627.122334-1.pom.sha512', isDirectory: false, lastModified: new Date().toISOString() },
-					{ name: 'testMavenCon-1.0-20250627.123247-2.pom', isDirectory: false, lastModified: new Date().toISOString() },
-					{ name: 'testMavenCon-1.0-20250627.123247-2.pom.md5', isDirectory: false, lastModified: new Date().toISOString() },
-					{ name: 'testMavenCon-1.0-20250627.123247-2.pom.sha1', isDirectory: false, lastModified: new Date().toISOString() },
-					{ name: 'testMavenCon-1.0-20250627.123247-2.pom.sha256', isDirectory: false, lastModified: new Date().toISOString() },
-					{ name: 'testMavenCon-1.0-20250627.123247-2.pom.sha512', isDirectory: false, lastModified: new Date().toISOString() }
-				]
-			};
+		// 从数据中获取目录内容
+		function scanDirectoryFromData(dirPath) {
+			// 尝试从注入的数据中获取目录结构
+			const repoDataElement = document.getElementById('repo-structure-data');
+			if (repoDataElement) {
+				try {
+					const repoStructure = JSON.parse(repoDataElement.textContent);
+					console.log('仓库结构数据:', repoStructure);
+					console.log('请求路径:', dirPath);
 
-			// 如果路径存在于静态数据中，返回对应的目录内容
-			if (dirPath in repoStructure) {
-				return repoStructure[dirPath];
+					// 如果当前路径存在于结构数据中，返回其内容
+					if (dirPath in repoStructure) {
+						console.log('找到路径，内容:', repoStructure[dirPath]);
+						return repoStructure[dirPath];
+					} else {
+						console.log('路径不存在于仓库结构中');
+					}
+				} catch (e) {
+					console.error('Failed to parse repository structure data:', e);
+				}
+			} else {
+				console.error('找不到仓库结构数据元素');
 			}
 
-			// 否则返回空数组
+			// 如果无法获取数据，则返回空数组
 			return [];
 		}
 
@@ -266,6 +245,159 @@
 		// 初始化页面
 		renderContent();
 	});
+</script>
+<script id="repo-structure-data" type="application/json">
+{
+  "": [
+    {
+      "name": "plugins",
+      "isDirectory": true,
+      "lastModified": "2025-06-28T02:42:15.398Z"
+    },
+    {
+      "name": "releases",
+      "isDirectory": true,
+      "lastModified": "2025-06-28T02:42:10.798Z"
+    },
+    {
+      "name": "snapshots",
+      "isDirectory": true,
+      "lastModified": "2025-06-28T01:47:23.896Z"
+    }
+  ],
+  "plugins": [],
+  "releases": [],
+  "snapshots": [
+    {
+      "name": "org",
+      "isDirectory": true,
+      "lastModified": "2025-06-27T12:50:55.695Z"
+    }
+  ],
+  "snapshots/org": [
+    {
+      "name": "test",
+      "isDirectory": true,
+      "lastModified": "2025-06-28T01:37:59.675Z"
+    }
+  ],
+  "snapshots/org/test": [
+    {
+      "name": "testMavenCon",
+      "isDirectory": true,
+      "lastModified": "2025-06-28T01:37:59.675Z"
+    }
+  ],
+  "snapshots/org/test/testMavenCon": [
+    {
+      "name": "1.0-SNAPSHOT",
+      "isDirectory": true,
+      "lastModified": "2025-06-27T12:50:55.703Z"
+    },
+    {
+      "name": "maven-metadata.xml",
+      "isDirectory": false,
+      "lastModified": "2025-06-27T12:50:55.703Z"
+    },
+    {
+      "name": "maven-metadata.xml.md5",
+      "isDirectory": false,
+      "lastModified": "2025-06-27T12:50:55.704Z"
+    },
+    {
+      "name": "maven-metadata.xml.sha1",
+      "isDirectory": false,
+      "lastModified": "2025-06-27T12:50:55.704Z"
+    },
+    {
+      "name": "maven-metadata.xml.sha256",
+      "isDirectory": false,
+      "lastModified": "2025-06-27T12:50:55.704Z"
+    },
+    {
+      "name": "maven-metadata.xml.sha512",
+      "isDirectory": false,
+      "lastModified": "2025-06-27T12:50:55.704Z"
+    }
+  ],
+  "snapshots/org/test/testMavenCon/1.0-SNAPSHOT": [
+    {
+      "name": "maven-metadata.xml",
+      "isDirectory": false,
+      "lastModified": "2025-06-27T12:50:55.695Z"
+    },
+    {
+      "name": "maven-metadata.xml.md5",
+      "isDirectory": false,
+      "lastModified": "2025-06-27T12:50:55.698Z"
+    },
+    {
+      "name": "maven-metadata.xml.sha1",
+      "isDirectory": false,
+      "lastModified": "2025-06-27T12:50:55.698Z"
+    },
+    {
+      "name": "maven-metadata.xml.sha256",
+      "isDirectory": false,
+      "lastModified": "2025-06-27T12:50:55.698Z"
+    },
+    {
+      "name": "maven-metadata.xml.sha512",
+      "isDirectory": false,
+      "lastModified": "2025-06-27T12:50:55.698Z"
+    },
+    {
+      "name": "testMavenCon-1.0-20250627.122334-1.pom",
+      "isDirectory": false,
+      "lastModified": "2025-06-27T12:50:55.698Z"
+    },
+    {
+      "name": "testMavenCon-1.0-20250627.122334-1.pom.md5",
+      "isDirectory": false,
+      "lastModified": "2025-06-27T12:50:55.698Z"
+    },
+    {
+      "name": "testMavenCon-1.0-20250627.122334-1.pom.sha1",
+      "isDirectory": false,
+      "lastModified": "2025-06-27T12:50:55.701Z"
+    },
+    {
+      "name": "testMavenCon-1.0-20250627.122334-1.pom.sha256",
+      "isDirectory": false,
+      "lastModified": "2025-06-27T12:50:55.701Z"
+    },
+    {
+      "name": "testMavenCon-1.0-20250627.122334-1.pom.sha512",
+      "isDirectory": false,
+      "lastModified": "2025-06-27T12:50:55.701Z"
+    },
+    {
+      "name": "testMavenCon-1.0-20250627.123247-2.pom",
+      "isDirectory": false,
+      "lastModified": "2025-06-27T12:50:55.702Z"
+    },
+    {
+      "name": "testMavenCon-1.0-20250627.123247-2.pom.md5",
+      "isDirectory": false,
+      "lastModified": "2025-06-27T12:50:55.702Z"
+    },
+    {
+      "name": "testMavenCon-1.0-20250627.123247-2.pom.sha1",
+      "isDirectory": false,
+      "lastModified": "2025-06-27T12:50:55.702Z"
+    },
+    {
+      "name": "testMavenCon-1.0-20250627.123247-2.pom.sha256",
+      "isDirectory": false,
+      "lastModified": "2025-06-27T12:50:55.703Z"
+    },
+    {
+      "name": "testMavenCon-1.0-20250627.123247-2.pom.sha512",
+      "isDirectory": false,
+      "lastModified": "2025-06-27T12:50:55.703Z"
+    }
+  ]
+}
 </script>
 </body>
 </html>
