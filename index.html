@@ -84,13 +84,14 @@
 <body>
 <h1>Maven 仓库浏览器</h1>
 <div id="breadcrumb" class="breadcrumb">
-	<a href="#" onclick="navigate('')">首页</a>
+	<!-- 面包屑导航将由JavaScript动态生成 -->
 </div>
 <div id="content">
 	<div class="loading">加载中...</div>
 </div>
 
 <script>
+	// 全局变量，存储当前路径
 	let currentPath = '';
 
 	// 页面加载完成后执行
@@ -110,24 +111,44 @@
 		};
 	};
 
-	// 导航到指定路径
+	// 导航到指定路径 - 添加到浏览器历史
 	function navigate(path) {
+		// 规范化路径格式
+		path = normalizePath(path);
 		history.pushState({path: path}, '', path ? `?path=${encodeURIComponent(path)}` : '');
 		navigateWithoutHistory(path);
 	}
 
 	// 不修改浏览历史的导航函数
 	function navigateWithoutHistory(path) {
+		// 规范化路径格式
+		path = normalizePath(path);
 		currentPath = path;
 		updateBreadcrumbs();
 		listDirectory(path);
 	}
 
+	// 规范化路径格式，确保路径格式一致
+	function normalizePath(path) {
+		// 移除开头和结尾的斜杠
+		path = path.replace(/^\/+|\/+$/g, '');
+		// 统一处理多个连续斜杠为单个斜杠
+		path = path.replace(/\/+/g, '/');
+		return path;
+	}
+
+	// 构建完整URL路径
+	function buildUrl(path) {
+		return path ? path + '/' : '';
+	}
+
 	// 更新面包屑导航
 	function updateBreadcrumbs() {
 		const breadcrumb = document.getElementById('breadcrumb');
-		breadcrumb.innerHTML = '<a href="#" onclick="navigate(\'\'); return false;">首页</a>';
+		// 清空当前面包屑
+		breadcrumb.innerHTML = '<a href="#" onclick="navigate(\'\'); return false;">根目录</a>';
 
+		// 如果当前不是根目录，则显示路径
 		if (currentPath) {
 			const parts = currentPath.split('/');
 			let cumulativePath = '';
@@ -147,7 +168,7 @@
 		contentDiv.innerHTML = '<div class="loading">加载中...</div>';
 
 		// 构建基于相对路径的URL
-		const baseUrl = path ? path + '/' : '';
+		const baseUrl = buildUrl(path);
 
 		// 使用fetch API获取目录列表
 		fetch(baseUrl)
@@ -161,31 +182,61 @@
 				// 过滤掉父目录链接和其他非文件/文件夹项
 				const items = links.filter(a => {
 					const href = a.getAttribute('href');
-					return href !== '../' && href !== './' && href !== 'index.html' && !href.startsWith('?') && !href.startsWith('http');
+					return href !== './' && href !== 'index.html' && !href.startsWith('?') && !href.startsWith('http');
 				});
 
-				if (items.length === 0) {
+				// 创建统一的数据结构
+				const fileList = [];
+
+				// 如果不是根目录，添加返回上级目录选项
+				if (currentPath) {
+					// 计算上一级目录的路径
+					const parentPath = currentPath.includes('/')
+						? currentPath.substring(0, currentPath.lastIndexOf('/'))
+						: '';
+
+					fileList.push({
+						name: '..',
+						isFolder: true,
+						href: '../',
+						isParent: true,
+						parentPath: parentPath // 存储父目录路径，避免重复计算
+					});
+				}
+
+				// 处理当前目录的内容
+				items.forEach(a => {
+					const href = a.getAttribute('href');
+					// 忽略父目录链接，因为我们已经手动添加了
+					if (href !== '../') {
+						const name = a.textContent.replace('/', '');
+						const isFolder = href.endsWith('/');
+
+						fileList.push({
+							name: name,
+							isFolder: isFolder,
+							href: href,
+							isParent: false
+						});
+					}
+				});
+
+				if (fileList.length === 0) {
 					contentDiv.innerHTML = '<p>此目录为空或无法访问。</p>';
 					return;
 				}
 
-				// 创建统一的数据结构
-				const fileList = items.map(a => {
-					const href = a.getAttribute('href');
-					const name = a.textContent.replace('/', '');
-					const isFolder = href.endsWith('/');
-
-					return {
-						name: name,
-						isFolder: isFolder,
-						href: href
-					};
-				});
-
-				// 排序：文件夹优先，然后按字母顺序排序
+				// 排序：父目录始终在最上方，然后是文件夹，然后是文件，都按字母顺序排序
 				fileList.sort((a, b) => {
+					// 父目录优先
+					if (a.isParent) return -1;
+					if (b.isParent) return 1;
+
+					// 文件夹优先于文件
 					if (a.isFolder && !b.isFolder) return -1;
 					if (!a.isFolder && b.isFolder) return 1;
+
+					// 相同类型按名称字母顺序排序
 					return a.name.localeCompare(b.name);
 				});
 
@@ -205,14 +256,31 @@
 				// 统一处理所有条目
 				fileList.forEach(item => {
 					if (item.isFolder) {
-						tableHTML += `
-                            <tr>
-                                <td><a href="#" class="folder" onclick="navigate('${currentPath ? currentPath + '/' : ''}${item.name}'); return false;">${item.name}</a></td>
-                                <td>-</td>
-                                <td>-</td>
-                            </tr>
-                        `;
+						if (item.isParent) {
+							// 处理返回上级目录，使用已存储的 parentPath
+							tableHTML += `
+                                <tr>
+                                    <td><a href="#" class="folder" onclick="navigate('${item.parentPath}'); return false;">返回上级目录</a></td>
+                                    <td>-</td>
+                                    <td>-</td>
+                                </tr>
+                            `;
+						} else {
+							// 处理普通文件夹
+							const itemPath = currentPath
+								? `${currentPath}/${item.name}`
+								: item.name;
+
+							tableHTML += `
+                                <tr>
+                                    <td><a href="#" class="folder" onclick="navigate('${itemPath}'); return false;">${item.name}</a></td>
+                                    <td>-</td>
+                                    <td>-</td>
+                                </tr>
+                            `;
+						}
 					} else {
+						// 处理文件
 						tableHTML += `
                             <tr>
                                 <td><a href="${baseUrl}${item.href}" class="file" target="_blank">${item.name}</a></td>
