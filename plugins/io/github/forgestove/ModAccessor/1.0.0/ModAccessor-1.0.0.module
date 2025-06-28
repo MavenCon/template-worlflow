@@ -1,0 +1,78 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "io.github.forgestove",
+    "module": "ModAccessor",
+    "version": "1.0.0",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.14"
+    }
+  },
+  "variants": [
+    {
+      "name": "shadowRuntimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "shadowed",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "ModAccessor-1.0.0.jar",
+          "url": "ModAccessor-1.0.0.jar",
+          "size": 35951327,
+          "sha512": "e382f5999fc11a0dc8392c240be5ba94eecd9ef2c283b9341eca830f870d6cbb9eadea7500ac971f2772a57610825ac2741a8a9446d00e7cfadf704ff8acba5d",
+          "sha256": "1f9ce5a6957c765666e5cb2ee991d24cfb61e4ca11813fc5191e94160d51b921",
+          "sha1": "5e86ad56de80698cce4e8631d71cbc62e87f5505",
+          "md5": "9271a56c3d21fb9927860d99dd86f934"
+        }
+      ]
+    },
+    {
+      "name": "javadocElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "javadoc",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "ModAccessor-1.0.0-javadoc.jar",
+          "url": "ModAccessor-1.0.0-javadoc.jar",
+          "size": 82298,
+          "sha512": "14e74f67a15c31e7bd851e0c54561701332e37e0a39dc1b11ed95b09fd5d6dfdceafb6be280b29e3ae7b08c3c2e7c22513b25bb60dbdf3616632f18ef5a72d90",
+          "sha256": "43bb409366bea1b05eb1208541f5cab93753eefd43e621dbc245daea8c8da544",
+          "sha1": "675350512962aa7527a3cb520ff14551279d0cac",
+          "md5": "3fc80b5d12f158a45e0c9b59cd65be50"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "ModAccessor-1.0.0-sources.jar",
+          "url": "ModAccessor-1.0.0-sources.jar",
+          "size": 4241,
+          "sha512": "0e6be50d83932f710732fc40614980f9da88e1e31e9366c93d9530649fe972de4da3390a1f8f66b0f9acda4ebca3920db8cf2dfc1f17ec3c32bc7b668fcf6cb6",
+          "sha256": "7b86cf621ef1cb199093bb959a7d4e22aa6388f20fd119badacc18990628c7ea",
+          "sha1": "f27c0fe5967fc44c89e9839bc1c4aabe5adde874",
+          "md5": "fc90000b5ccc93d045056e8c1986d53e"
+        }
+      ]
+    }
+  ]
+}

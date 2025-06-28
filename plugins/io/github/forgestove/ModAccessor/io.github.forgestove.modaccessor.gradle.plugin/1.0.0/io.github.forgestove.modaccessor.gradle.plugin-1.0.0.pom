@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>io.github.forgestove.modaccessor</groupId>
+  <artifactId>io.github.forgestove.modaccessor.gradle.plugin</artifactId>
+  <version>1.0.0</version>
+  <packaging>pom</packaging>
+  <name>ModAccessor</name>
+  <description>A simple gradle plugin to solve the problem of accessing private fields and methods during compile time.</description>
+  <dependencies>
+    <dependency>
+      <groupId>io.github.forgestove</groupId>
+      <artifactId>ModAccessor</artifactId>
+      <version>1.0.0</version>
+    </dependency>
+  </dependencies>
+</project>
