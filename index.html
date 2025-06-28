@@ -44,6 +44,14 @@
             border-bottom: 1px solid #eee;
         }
 
+        .file-list .folder:before {
+            content: "📁 ";
+        }
+
+        .file-list .file:before {
+            content: "📄 ";
+        }
+
         .file-date {
             color: #666;
             font-size: 0.85em;
@@ -65,56 +73,70 @@
 
 <script>
 	document.addEventListener('DOMContentLoaded', function () {
-		// 获取当前URL路径
-		const currentPath = window.location.pathname;
-		const baseUrl = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+		// 获取当前URL及参数
+		const urlParams = new URLSearchParams(window.location.search);
+		const baseUrl = window.location.href.split('?')[0];
 
-		// 确定当前目录
-		let currentDir = '';
-		if (currentPath.includes('snapshots/')) {
-			currentDir = currentPath.substring(currentPath.indexOf('snapshots/') + 'snapshots/'.length);
-			if (currentDir.endsWith('/')) {
-				currentDir = currentDir.slice(0, -1);
-			}
-		}
+		// 从URL参数获取当前目录，如果没有则使用根目录
+		let currentDir = urlParams.get('path') || '';
 
 		// 异步加载目录内容
 		async function loadDirectoryContents(dirPath = '') {
 			try {
-				// 通过AJAX请求获取目录内容
-				const response = await fetch(`/api/list?path=${encodeURIComponent(dirPath)}`);
-				if (!response.ok) {
-					throw new Error(`Failed to load directory: ${response.statusText}`);
-				}
-
-				const data = await response.json();
-				return data.files || [];
+				// 假设是GitHub Pages无法提供后端API，直接使用静态数据
+				return scanDirectoryFromStaticData(dirPath);
 			} catch (error) {
 				console.error('Error loading directory contents:', error);
-
-				// 如果API不可用，回退到直接扫描当前页面所在目录
-				return scanDirectoryFromDOM();
+				return [];
 			}
 		}
 
-		// 从DOM中扫描当前目录内容（在没有后端API的情况下使用）
-		function scanDirectoryFromDOM() {
-			// 这个函数会扫描当前页面所处的目录，并返回文件列表
-			// 由于这是一个静态HTML页面，我们需要服务器提前生成包含目录内容的数据
-			// 这里我们将尝试从页面中的一个隐藏元素获取数据
+		// 从静态数据中获取目录内容
+		function scanDirectoryFromStaticData(dirPath) {
+			// 存储库结构的静态数据
+			const repoStructure = {
+				'': [
+					{name: 'org', isDirectory: true, lastModified: new Date().toISOString()}
+				],
+				'org': [
+					{name: 'test', isDirectory: true, lastModified: new Date().toISOString()}
+				],
+				'org/test': [
+					{name: 'testMavenCon', isDirectory: true, lastModified: new Date().toISOString()}
+				],
+				'org/test/testMavenCon': [
+					{name: 'maven-metadata.xml', isDirectory: false, lastModified: new Date().toISOString()},
+					{name: 'maven-metadata.xml.md5', isDirectory: false, lastModified: new Date().toISOString()},
+					{name: 'maven-metadata.xml.sha1', isDirectory: false, lastModified: new Date().toISOString()},
+					{name: 'maven-metadata.xml.sha256', isDirectory: false, lastModified: new Date().toISOString()},
+					{name: 'maven-metadata.xml.sha512', isDirectory: false, lastModified: new Date().toISOString()},
+					{name: '1.0-SNAPSHOT', isDirectory: true, lastModified: new Date().toISOString()}
+				],
+				'org/test/testMavenCon/1.0-SNAPSHOT': [
+					{name: 'maven-metadata.xml', isDirectory: false, lastModified: new Date().toISOString()},
+					{name: 'maven-metadata.xml.md5', isDirectory: false, lastModified: new Date().toISOString()},
+					{name: 'maven-metadata.xml.sha1', isDirectory: false, lastModified: new Date().toISOString()},
+					{name: 'maven-metadata.xml.sha256', isDirectory: false, lastModified: new Date().toISOString()},
+					{name: 'maven-metadata.xml.sha512', isDirectory: false, lastModified: new Date().toISOString()},
+					{name: 'testMavenCon-1.0-20250627.122334-1.pom', isDirectory: false, lastModified: new Date().toISOString()},
+					{name: 'testMavenCon-1.0-20250627.122334-1.pom.md5', isDirectory: false, lastModified: new Date().toISOString()},
+					{name: 'testMavenCon-1.0-20250627.122334-1.pom.sha1', isDirectory: false, lastModified: new Date().toISOString()},
+					{name: 'testMavenCon-1.0-20250627.122334-1.pom.sha256', isDirectory: false, lastModified: new Date().toISOString()},
+					{name: 'testMavenCon-1.0-20250627.122334-1.pom.sha512', isDirectory: false, lastModified: new Date().toISOString()},
+					{name: 'testMavenCon-1.0-20250627.123247-2.pom', isDirectory: false, lastModified: new Date().toISOString()},
+					{name: 'testMavenCon-1.0-20250627.123247-2.pom.md5', isDirectory: false, lastModified: new Date().toISOString()},
+					{name: 'testMavenCon-1.0-20250627.123247-2.pom.sha1', isDirectory: false, lastModified: new Date().toISOString()},
+					{name: 'testMavenCon-1.0-20250627.123247-2.pom.sha256', isDirectory: false, lastModified: new Date().toISOString()},
+					{name: 'testMavenCon-1.0-20250627.123247-2.pom.sha512', isDirectory: false, lastModified: new Date().toISOString()}
+				]
+			};
 
-			const dirDataElement = document.getElementById('directory-data');
-			if (dirDataElement) {
-				try {
-					const data = JSON.parse(dirDataElement.textContent);
-					// 确保返回文件数组，而不是整个JSON对象
-					return data.files || [];
-				} catch (e) {
-					console.error('Failed to parse directory data:', e);
-				}
+			// 如果路径存在于静态数据中，返回对应的目录内容
+			if (dirPath in repoStructure) {
+				return repoStructure[dirPath];
 			}
 
-			// 如果无法获取数据，则返回一个空数组
+			// 否则返回空数组
 			return [];
 		}
 
@@ -124,13 +146,13 @@
 
 			const parts = path.split('/');
 			let breadcrumb = '<div class="breadcrumb">';
-			breadcrumb += '<a href="' + baseUrl + '">首页</a>';
+			breadcrumb += `<a href="${baseUrl}">首页</a>`;
 
 			let currentPath = '';
 			for (const part of parts) {
 				if (!part) continue;
-				currentPath += part + '/';
-				breadcrumb += ' &gt; <a href="' + baseUrl + 'snapshots/' + currentPath + '">' + part + '</a>';
+				currentPath += (currentPath ? '/' : '') + part;
+				breadcrumb += ` &gt; <a href="${baseUrl}?path=${encodeURIComponent(currentPath)}">${part}</a>`;
 			}
 
 			breadcrumb += '</div>';
@@ -142,7 +164,8 @@
 			const contentElement = document.getElementById('content');
 
 			try {
-				const files = await loadDirectoryContents(currentDir ? `snapshots/${currentDir}` : 'snapshots');
+				// 加载当前目录的内容
+				const files = await loadDirectoryContents(currentDir);
 
 				let html = '';
 
@@ -157,22 +180,22 @@
 					const parentDir = currentDir.includes('/') ?
 						currentDir.substring(0, currentDir.lastIndexOf('/')) :
 						'';
-					html += '<a href="' + baseUrl + (parentDir ? 'snapshots/' + parentDir + '/' : '') + '" class="back-link">⬅️ 返回上层</a>';
+					html += `<a href="${baseUrl}${parentDir ? '?path=' + encodeURIComponent(parentDir) : ''}" class="back-link">⬅️ 返回上层</a>`;
 				}
 
-				// 列出文件��目录
+				// 列出文件和目录
 				html += '<ul class="file-list">';
 
 				if (files.length === 0) {
 					html += '<li>此目录为空</li>';
 				} else {
-					// 首先显示目��
+					// 首先显示目录
 					const folders = files.filter(f => f.isDirectory);
 					folders.forEach(folder => {
 						const folderPath = currentDir ? currentDir + '/' + folder.name : folder.name;
 						html += `<li class="folder">
-                                <a href="${baseUrl}snapshots/${folderPath}/">${folder.name}</a>
-                            </li>`;
+							<a href="${baseUrl}?path=${encodeURIComponent(folderPath)}">${folder.name}</a>
+						</li>`;
 					});
 
 					// 然后显示文件
@@ -181,9 +204,9 @@
 						const filePath = currentDir ? 'snapshots/' + currentDir + '/' + file.name : 'snapshots/' + file.name;
 						const formattedDate = new Date(file.lastModified).toLocaleString();
 						html += `<li class="file">
-                                <a href="${baseUrl}${filePath}">${file.name}</a>
-                                <span class="file-date">${formattedDate}</span>
-                            </li>`;
+							<a href="${baseUrl}${filePath}" target="_blank">${file.name}</a>
+							<span class="file-date">${formattedDate}</span>
+						</li>`;
 					});
 				}
 
@@ -198,19 +221,6 @@
 		// 初始化页面
 		renderContent();
 	});
-</script>
-
-<!-- 这个隐藏元素用于在没有后端API的情况下提供目录数据 -->
-<script id="directory-data" type="application/json">
-	{
-		"files": [
-			{
-				"name": "org",
-				"isDirectory": true,
-				"lastModified": "2025-06-28T00:00:00.000Z"
-			}
-		]
-	}
 </script>
 </body>
 </html>
