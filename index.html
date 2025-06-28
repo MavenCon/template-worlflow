@@ -99,14 +99,16 @@
 
 		// 从DOM中扫描当前目录内容（在没有后端API的情况下使用）
 		function scanDirectoryFromDOM() {
-			// 这���函数会扫描当前页面所处的目录，并返回文件列表
+			// 这个函数会扫描当前页面所处的目录，并返回文件列表
 			// 由于这是一个静态HTML页面，我们需要服务器提前生成包含目录内容的数据
 			// 这里我们将尝试从页面中的一个隐藏元素获取数据
 
 			const dirDataElement = document.getElementById('directory-data');
 			if (dirDataElement) {
 				try {
-					return JSON.parse(dirDataElement.textContent);
+					const data = JSON.parse(dirDataElement.textContent);
+					// 确保返回文件数组，而不是整个JSON对象
+					return data.files || [];
 				} catch (e) {
 					console.error('Failed to parse directory data:', e);
 				}
@@ -158,7 +160,7 @@
 					html += '<a href="' + baseUrl + (parentDir ? 'snapshots/' + parentDir + '/' : '') + '" class="back-link">⬅️ 返回上层</a>';
 				}
 
-				// 列出文件和目录
+				// 列出文件��目录
 				html += '<ul class="file-list">';
 
 				if (files.length === 0) {
