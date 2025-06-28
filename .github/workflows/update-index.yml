@@ -2,7 +2,7 @@ name: Update Maven Repository Index
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main, dev ]
     paths:
       - 'snapshots/**'
       - 'releases/**'
