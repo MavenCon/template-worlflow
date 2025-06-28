@@ -6,21 +6,13 @@
 	<title>Maven Index</title>
 	<!-- 在页面渲染前应用主题，防止闪烁 -->
 	<script>
-		// 提前加载保存的主题设置，防止页面闪烁
 		(function () {
 			const savedTheme = localStorage.getItem('theme');
 			if (!(savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches))) return;
 			document.documentElement.setAttribute('data-theme', 'dark');
 			document.documentElement.classList.add('theme-transition-disabled');
 		})();
-		// 在页面加载后短暂延迟再启用过渡效果
-		window.addEventListener('load', function () {
-			setTimeout(function () {
-				document.documentElement.classList.remove('theme-transition-disabled');
-			}, 100);
-		});
 	</script>
-	<!--suppress CssUnusedSymbol -->
 	<style>
         :root {
             --body-bg: #fff;
@@ -30,6 +22,7 @@
             --border-color: #eee;
             --file-icon-color: #444;
             --file-date-color: #666;
+            --file-size-color: #666;
             --breadcrumb-bg: #f8f9fa;
         }
 
@@ -41,11 +34,11 @@
             --border-color: #333;
             --file-icon-color: #aaa;
             --file-date-color: #999;
+            --file-size-color: #999;
             --breadcrumb-bg: #1e1e1e;
         }
 
         /* 禁用初始加载时的过渡动画 */
-        .theme-transition-disabled,
         .theme-transition-disabled * {
             transition: none !important;
         }
@@ -72,13 +65,6 @@
 
         a:hover {
             text-decoration: underline;
-        }
-
-        .breadcrumb {
-            margin-bottom: 20px;
-            padding: 8px 15px;
-            background-color: var(--breadcrumb-bg);
-            border-radius: 4px;
         }
 
         .file-list {
@@ -112,21 +98,14 @@
             color: #2196f3;
         }
 
-        .file-icon.md5, .file-icon.sha1, .file-icon.sha256, .file-icon.sha512 {
-            color: #9e9e9e;
-        }
-
-        .file-date {
+        .file-date, .file-size {
             color: var(--file-date-color);
             font-size: 0.85em;
             margin-left: 10px;
         }
 
-        .back-link {
-            margin-bottom: 15px;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
+        .file-size {
+            color: var(--file-size-color);
         }
 
         .file-name {
@@ -242,7 +221,7 @@
         /* 月亮图标总是定位在右侧滑块位置 */
         .moon-icon {
             left: 35px; /* 这个值等于 左侧padding(4px) + 滑块宽度(26px) + 偏移量(5px) */
-            color: #1e3a8a; /* 深蓝色，与白色滑块形成更好的对比 */
+            color: #1e3a8a;
         }
 
         /* 亮色模式下显示太阳图标，隐藏月亮图标 */
@@ -330,9 +309,13 @@
 		<symbol id="icon-file" viewBox="0 0 384 512">
 			<path d="M0 64C0 28.7 28.7 0 64 0H224V128c0 17.7 14.3 32 32 32H384V448c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V64z"/>
 		</symbol>
+		<!-- 文件大小图标 - 硬盘图标 -->
+		<symbol id="icon-hdd" viewBox="0 0 576 512">
+			<path d="M0 96C0 60.7 28.7 32 64 32H512c35.3 0 64 28.7 64 64V416c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V96zm112 288a48 48 0 1 0 0-96 48 48 0 1 0 0 96z"/>
+		</symbol>
 		<!-- 信息圆圈图标 -->
 		<symbol id="icon-info-circle" viewBox="0 0 512 512">
-			<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM216 336h24V272H216c-13.3 0-24-10.7-24-24s10.7-24 24-24h48c13.3 0 24 10.7 24 24v88h8c13.3 0 24 10.7 24 24s-10.7 24-24 24H216c-13.3 0-24-10.7-24-24s10.7-24 24-24zm40-208a32 32 0 1 1 0 64 32 32 0 1 1 0-64z"/>
+			<path d="M256 512A256 0 1 0 256 0a256 256 0 1 0 0 512zM216 336h24V272H216c-13.3 0-24-10.7-24-24s10.7-24 24-24h48c13.3 0 24 10.7 24 24v88h8c13.3 0 24 10.7 24 24s-10.7 24-24 24H216c-13.3 0-24-10.7-24-24s10.7-24 24-24zm40-208a32 32 0 1 1 0 64 32 32 0 1 1 0-64z"/>
 		</symbol>
 		<!-- 时钟图标 -->
 		<symbol id="icon-clock" viewBox="0 0 512 512">
@@ -429,12 +412,19 @@
 			if (window.repoStructure) {
 				console.log('仓库结构数据:', window.repoStructure);
 				console.log('请求路径:', dirPath);
-				// 如果当前路径存在于结构数据中，返回其内容
 				if (dirPath in window.repoStructure) return window.repoStructure[dirPath];
 				else console.log('路径不存在于仓库结构中');
 			} else console.error('仓库结构数据尚未加载');
 			// 如果无法获取数据，则返回空数组
 			return [];
+		}
+		// 格式化文件大小
+		function formatFileSize(bytes) {
+			if (bytes === 0) return '0 Bytes';
+			const k = 1024;
+			const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+			const i = Math.floor(Math.log(bytes) / Math.log(k));
+			return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 		}
 		// 获取文件类型对应的图标
 		function getFileIcon(fileName) {
@@ -493,8 +483,8 @@
 			// 检查目录是否为空（不包括".."项）
 			if (files.length === 0) html += '<li><svg class="svg-icon"><use xlink:href="#icon-info-circle"></use></svg> 此目录为空</li>';
 			else {
-				// 首先显示根目录
-				const folders = files.filter(f => f.isDirectory);
+				// 首先显示根目录 - 使用size=0来识别目录
+				const folders = files.filter(f => f.size === 0);
 				folders.forEach(folder => {
 					const folderPath = currentDir ? currentDir + '/' + folder.name : folder.name;
 					html += `<li>
@@ -502,20 +492,23 @@
 								<svg class="svg-icon folder-icon file-icon"><use xlink:href="#icon-folder"></use></svg>
 							</a>
 							<div class="file-name"><a href="${baseUrl}?path=${encodeURIComponent(folderPath)}">${folder.name}</a></div>
+							<span class="file-date"><svg class="svg-icon"><use xlink:href="#icon-clock"></use></svg> ${new Date(folder.lastModified).toLocaleString()}</span>
 						</li>`;
 				});
-				// 然后显示文件
-				const onlyFiles = files.filter(f => !f.isDirectory);
+				// 然后显示文件 - 使用size>0来识别文件
+				const onlyFiles = files.filter(f => f.size > 0);
 				onlyFiles.forEach(file => {
 					// 确定正确的文件路径，根据currentDir的第一部分决定是哪个仓库目录
 					let filePath;
 					filePath = currentDir ? currentDir + '/' + file.name : file.name;
+					const fileSize = formatFileSize(file.size);
 					const formattedDate = new Date(file.lastModified).toLocaleString();
 					html += `<li>
 							<a href="${baseUrl}${filePath}" target="_blank">
 								${getFileIcon(file.name)}
 							</a>
 							<div class="file-name"><a href="${baseUrl}${filePath}" target="_blank">${file.name}</a></div>
+							<span class="file-size"><svg class="svg-icon"><use xlink:href="#icon-hdd"></use></svg> ${fileSize}</span>
 							<span class="file-date"><svg class="svg-icon"><use xlink:href="#icon-clock"></use></svg> ${formattedDate}</span>
 						</li>`;
 				});

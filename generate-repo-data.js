@@ -30,7 +30,10 @@ function scanDirectory(dirPath, relativePath = '') {
 		const isDirectory = stats.isDirectory();
 		// 如果是根目录，只添加指定的目标目录
 		if (relativePath === '' && !TARGET_DIRS.includes(item)) continue;
-		result.push({name: item, isDirectory: isDirectory, lastModified: stats.mtime.toISOString()});
+		// 目录的size为0，文件则为实际大小
+		result.push({
+			name: item, lastModified: stats.mtime.toISOString(), size: isDirectory ? 0 : stats.size
+		});
 	}
 	return result;
 }
@@ -64,7 +67,7 @@ function generateRepositoryStructure() {
 	// 开始递归扫描
 	scanSubdirectories(REPO_ROOT, '');
 	// 打印结构数据以便调试
-	console.log('仓库结构键：', Object.keys(repoStructure));
+	console.log(Object.keys(repoStructure));
 	return repoStructure;
 }
 /**
@@ -84,6 +87,5 @@ function saveStructureToFile(repoStructure) {
 	}
 }
 // 执行生成过程
-const repoStructure = generateRepositoryStructure();
-saveStructureToFile(repoStructure);
+saveStructureToFile(generateRepositoryStructure());
 console.log('Repository structure data generation completed!');
