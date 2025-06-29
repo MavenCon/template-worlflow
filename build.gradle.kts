@@ -43,39 +43,43 @@ val list = listOf(
 
 list.forEach {
     val tFile = file(it)
+    tFile.mkdirs()
     val target = outputDir.resolve(it)
     target.mkdirs()
-    forEachFile(tFile, tFile)
+
+    forEachFile(tFile, tFile.parentFile)
+
 }
 // must be directory
 fun forEachFile(f: File, o: File) {
-    var name = f.toString()
-        .replace(o.toString(), "")
-        .replace("\\", "/")
-    if (name.isNotEmpty()) name = name.substring(1)
+    var name = f.relativeTo(o).toString()
+    println(name)
 
     val listFiles = f.listFiles()
     val links: ArrayList<HashMap<String, Any>> = ArrayList()
+    links.add(HashMap(mapOf("url" to "../", "title" to "../")))
     val downloads: ArrayList<HashMap<String, Any>> = ArrayList()
     val tMap = HashMap<String, Any>()
-    tMap["title"] = name
-    listFiles?.forEach {
-        if (it.isDirectory) {
-            val tHash = HashMap<String, Any>()
-            val tName = it.toString()
-                .replace(o.toString(), "")
-                .replace("\\", "/")
-                .substring(1)
-            tHash["url"] = "./$tName/index.html"
-            tHash["title"] = it.name
-            links.add(tHash)
+    @Suppress("IfThenToSafeAccess")
+    if (listFiles != null) {
+        listFiles.forEach {
+            if (it.isDirectory) {
+                val tHash = HashMap<String, Any>()
+                val tName = it.toString()
+                    .replace(o.toString(), "")
+                    .replace("\\", "/")
+                    .substring(1)
+                tHash["url"] = "./$tName/index.html"
+                tHash["title"] = it.name
+                links.add(tHash)
+            }
         }
     }
     tMap["links"] = links
     tMap["downloads"] = downloads
     tMap["title"] = name
 
-    val out = outputDir.resolve(o.name)
+    val out = outputDir.resolve(name)
     out.mkdirs()
     out.resolve("index.html")
         .bufferedWriter(Charsets.UTF_8)

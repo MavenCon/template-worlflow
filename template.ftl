@@ -37,15 +37,19 @@
 
     <h2>项目列表：</h2>
     <ul>
-        <#list links as link>
-            <li>
-                <a href="${link.url}">${link.title}</a>
-            </li>
-        </#list>
-        <#list downloads as download>
-            <li>
-                <a href="${download.url}" download="${download.name}">${download.title}</a>
-            </li>
-        </#list>
+        <#if links?has_content>
+            <#list links as link>
+                <li>
+                    <a href="${link["url"]!""}">${link["title"]!""}</a>
+                </li>
+            </#list>
+        </#if>
+        <#if downloads?has_content>
+            <#list downloads as download>
+                <li>
+                    <a href="${download["url"]!""}" download="${download["name"]!""}">${download["title"]!""}</a>
+                </li>
+            </#list>
+        </#if>
     </ul>
 </body>
