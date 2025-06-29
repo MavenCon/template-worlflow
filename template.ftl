@@ -34,7 +34,7 @@
 <body>
     <h1>${title}</h1>
 
-    
+
     <h2>项目列表：</h2>
     <ul>
         <#list links as link>
