@@ -98,7 +98,7 @@ fun forEachFile(f: File, o: File) {
     if (listFiles != null) {
         listFiles.forEach {
             if (it.isDirectory)
-                forEachFile(it, o)
+                forEachFile(it, f)
         }
     }
 }
