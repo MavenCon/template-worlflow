@@ -315,7 +315,7 @@
 		</symbol>
 		<!-- 信息圆圈图标 -->
 		<symbol id="icon-info-circle" viewBox="0 0 512 512">
-			<path d="M256 512A256 0 1 0 256 0a256 256 0 1 0 0 512zM216 336h24V272H216c-13.3 0-24-10.7-24-24s10.7-24 24-24h48c13.3 0 24 10.7 24 24v88h8c13.3 0 24 10.7 24 24s-10.7 24-24 24H216c-13.3 0-24-10.7-24-24s10.7-24 24-24zm40-208a32 32 0 1 1 0 64 32 32 0 1 1 0-64z"/>
+			<path d="M256 512c141.4 0 256-114.6 256-256S397.4 0 256 0S0 114.6 0 256s114.6 256 256 256zM216 336h24V272H216c-13.3 0-24-10.7-24-24s10.7-24 24-24h48c13.3 0 24 10.7 24 24v88h8c13.3 0 24 10.7 24 24s-10.7 24-24 24H216c-13.3 0-24-10.7-24-24s10.7-24 24-24zm40-208a32 32 0 1 1 0 64 32 32 0 1 1 0-64z"/>
 		</symbol>
 		<!-- 时钟图标 -->
 		<symbol id="icon-clock" viewBox="0 0 512 512">
@@ -396,11 +396,65 @@
 				applyTheme(e.matches ? 'dark' : 'light');
 			}
 		});
-		// 获取当前URL及参数
-		const urlParams = new URLSearchParams(window.location.search);
-		const baseUrl = window.location.href.split('?')[0];
-		// 从URL参数获取当前目录，如果没有则使用根目录
-		let currentDir = urlParams.get('path') || '';
+		// 获取当前路径信息
+		const baseUrl = window.location.pathname.split('/').slice(0, -1).join('/') + '/';
+		// 处理路径中的分隔符，支持 / 作为路径分隔符
+		function normalizePath(path) {
+			// 移除开头和结尾的斜杠
+			return path.replace(/^\/+|\/+$/g, '');
+		}
+		// 从URL哈希中提取目录路径
+		function getCurrentDirFromHash() {
+			// 获取URL中的哈希部分（去掉开头的#/ 或 #）
+			let hashPath = '';
+			if (window.location.hash.startsWith('#/')) {
+				hashPath = window.location.hash.substring(2);
+			} else if (window.location.hash.startsWith('#')) {
+				// 兼容旧格式的 # 哈希
+				hashPath = window.location.hash.substring(1);
+			}
+			// 如果哈希为空，尝试使用旧的查询参数模式（向后兼容）
+			if (!hashPath) {
+				const urlParams = new URLSearchParams(window.location.search);
+				hashPath = urlParams.get('path') || '';
+				// 如果查询参数也为空，则使用旧的路径部分（向后兼容）
+				if (!hashPath) {
+					const fullPath = window.location.pathname;
+					const indexPos = fullPath.toLowerCase().indexOf('index.html');
+					if (indexPos !== -1) {
+						// 提取 index.html 后面的路径
+						hashPath = fullPath.substring(indexPos + 10); // 10 是 "index.html" 的长度
+					}
+				}
+				// 如果找到了旧式路径，自动转换为哈希路由并重定向（只在初次加载时）
+				if (hashPath && !window.location.hash) {
+					window.location.replace(baseUrl + '#/' + hashPath);
+					return hashPath;
+				}
+			}
+			return hashPath;
+		}
+		// 获取当前目录
+		let currentDir = normalizePath(getCurrentDirFromHash());
+		// 处理导航链接的点击事件
+		function handleNavigationClick(event, path) {
+			event.preventDefault(); // 阻止默认的链接行为
+			// 规范化路径
+			const normalizedPath = normalizePath(path);
+			// 直接使用 window.location.hash 设置哈希，这样会在地址栏显示并且可以被复制
+			window.location.hash = '/' + normalizedPath;
+			// 更新当前目录并重新渲染内容
+			currentDir = normalizedPath;
+			renderContent();
+			return false;
+		}
+		// 监听浏览器历史记录的变化，比如用户点击了后退按钮
+		window.addEventListener('popstate', function (event) {
+			if (event.state && event.state.path !== undefined) {
+				currentDir = event.state.path;
+				renderContent();
+			}
+		});
 		// 异步加载目录内容
 		async function loadDirectoryContents(dirPath = '') {
 			// 从动态生成的仓库结构数据中读取内容
@@ -448,12 +502,14 @@
 			if (!path) return '<h2><svg class="svg-icon"><use xlink:href="#icon-folder-open"></use></svg> 根目录</h2>';
 			const parts = path.split('/');
 			let html = '<h2><svg class="svg-icon"><use xlink:href="#icon-folder-open"></use></svg> ';
-			html += `<a href="${baseUrl}">根目录</a>`;
+			// 为根目录添加正确的哈希路由链接
+			html += `<a href="#" class="breadcrumb-link" data-path="">根目录</a>`;
 			let currentPath = '';
 			for (const part of parts) {
 				if (!part) continue;
 				currentPath += (currentPath ? '/' : '') + part;
-				html += ` / <a href="${baseUrl}?path=${encodeURIComponent(currentPath)}">${part}</a>`;
+				// 为每个路径部分添加正确的哈希路由链接
+				html += ` / <a href="#/${currentPath}" class="breadcrumb-link" data-path="${currentPath}">${part}</a>`;
 			}
 			html += '</h2>';
 			return html;
@@ -473,11 +529,13 @@
 				const parentDir = currentDir.includes('/') ?
 					currentDir.substring(0, currentDir.lastIndexOf('/')) :
 					'';
+				// 为链接添加实际的href，保持与哈希路由一致
+				const parentUrl = '#/' + parentDir;
 				html += `<li>
-						<a href="${baseUrl}${parentDir ? '?path=' + encodeURIComponent(parentDir) : ''}">
+						<a href="${parentUrl}" class="folder-link" data-path="${parentDir}">
 							<svg class="svg-icon folder-icon file-icon"><use xlink:href="#icon-folder"></use></svg>
 						</a>
-						<div class="file-name"><a href="${baseUrl}${parentDir ? '?path=' + encodeURIComponent(parentDir) : ''}">..</a></div>
+						<div class="file-name"><a href="${parentUrl}" class="folder-link" data-path="${parentDir}">..</a></div>
 					</li>`;
 			}
 			// 检查目录是否为空（不包括".."项）
@@ -487,22 +545,24 @@
 				const folders = files.filter(f => f.size === 0);
 				folders.forEach(folder => {
 					const folderPath = currentDir ? currentDir + '/' + folder.name : folder.name;
+					// 为链接添加实际的href，保持与哈希路由一致
+					const folderUrl = '#/' + folderPath;
 					html += `<li>
-							<a href="${baseUrl}?path=${encodeURIComponent(folderPath)}">
+							<a href="${folderUrl}" class="folder-link" data-path="${folderPath}">
 								<svg class="svg-icon folder-icon file-icon"><use xlink:href="#icon-folder"></use></svg>
 							</a>
-							<div class="file-name"><a href="${baseUrl}?path=${encodeURIComponent(folderPath)}">${folder.name}</a></div>
+							<div class="file-name"><a href="${folderUrl}" class="folder-link" data-path="${folderPath}">${folder.name}</a></div>
 							<span class="file-date"><svg class="svg-icon"><use xlink:href="#icon-clock"></use></svg> ${new Date(folder.lastModified).toLocaleString()}</span>
 						</li>`;
 				});
 				// 然后显示文件 - 使用size>0来识别文件
 				const onlyFiles = files.filter(f => f.size > 0);
 				onlyFiles.forEach(file => {
-					// 确定正确的文件路径，根据currentDir的第一部分决定是哪个仓库目录
-					let filePath;
-					filePath = currentDir ? currentDir + '/' + file.name : file.name;
+					// 确定正确的文件路径
+					let filePath = currentDir ? currentDir + '/' + file.name : file.name;
 					const fileSize = formatFileSize(file.size);
 					const formattedDate = new Date(file.lastModified).toLocaleString();
+					// 文件直接使用完整路径，不是index.html的路径
 					html += `<li>
 							<a href="${baseUrl}${filePath}" target="_blank">
 								${getFileIcon(file.name)}
@@ -515,6 +575,22 @@
 			}
 			html += '</ul>';
 			contentElement.innerHTML = html;
+			// 为目录链接添加点击事件处理
+			document.querySelectorAll('.folder-link').forEach(link => {
+				link.addEventListener('click', function (event) {
+					// 获取存储在data-path属性中的路径
+					const path = this.getAttribute('data-path');
+					handleNavigationClick(event, path);
+				});
+			});
+			// 为面包屑导航链接添加点击事件处理
+			document.querySelectorAll('.breadcrumb-link').forEach(link => {
+				link.addEventListener('click', function (event) {
+					// ���取存储在data-path属性中的路径
+					const path = this.getAttribute('data-path');
+					handleNavigationClick(event, path);
+				});
+			});
 		}
 		// 初始化页面由外部JSON文件加载后调用
 		window.renderContent = renderContent;
