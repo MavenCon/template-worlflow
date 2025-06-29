@@ -71,6 +71,15 @@ fun forEachFile(f: File, o: File) {
                 tHash["url"] = "./$tName/index.html"
                 tHash["title"] = it.name
                 links.add(tHash)
+            } else {
+                val tHash = HashMap<String, Any>()
+                val tName = it.toString()
+                    .replace(o.toString(), "")
+                    .replace("\\", "/")
+                    .substring(1)
+                tHash["url"] = "./$tName/index.html"
+                tHash["title"] = it.name
+                tHash["name"] = it.name
             }
         }
     }
@@ -85,7 +94,13 @@ fun forEachFile(f: File, o: File) {
         .use {
             template.process(tMap, it)
         }
-
+    @Suppress("IfThenToSafeAccess")
+    if (listFiles != null) {
+        listFiles.forEach {
+            if (it.isDirectory)
+                forEachFile(it, o)
+        }
+    }
 }
 
 
