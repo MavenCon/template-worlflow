@@ -26,7 +26,7 @@ map.put("links", ArrayList(listOf(
 )))
 map.put("downloads", ArrayList<HashMap<String, Any>>())
 val template = cfg.getTemplate("template.ftl")
-var outputDir: File = layout.buildDirectory.dir("pages").get().asFile
+var outputDir: File = file("./")
 outputDir.mkdirs()
 outputDir.resolve("index.html")
     .bufferedWriter(Charsets.UTF_8)
@@ -52,8 +52,7 @@ list.forEach {
 }
 // must be directory
 fun forEachFile(f: File, o: File) {
-    var name = f.relativeTo(o).toString()
-    println(name)
+    val name = f.relativeTo(o).toString()
 
     val listFiles = f.listFiles()
     val links: ArrayList<HashMap<String, Any>> = ArrayList()
@@ -87,18 +86,6 @@ fun forEachFile(f: File, o: File) {
             template.process(tMap, it)
         }
 
-    println(name)
-}
-
-
-list.forEach {
-    val t = tasks.register<Copy>("copyToPages$it") {
-        from(it)
-        into("build/pages/$it")
-    }
-    tasks.build {
-        dependsOn(t)
-    }
 }
 
 
